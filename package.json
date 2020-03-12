@@ -4,6 +4,9 @@
   "description": "RuleHarvester is a rules engine for javascript",
   "main": "build/index.js",
   "types": "build/index.d.ts",
+  "files": [
+    "build/**/*"
+  ],
   "scripts": {
     "start:example": "cd examples && npm run start",
     "start:example:dev": "nodemon",
@@ -32,7 +35,7 @@
     "sinon": "^8.1.0",
     "ts-mock-imports": "^1.2.6"
   },
-  "files": [
-    "build/**/*"
-  ]
+  "publishConfig": {
+    "access": "public"
+  }
 }
