@@ -1,0 +1,27 @@
+{
+  "name": "rule-harvester-example",
+  "version": "1.0.0",
+  "description": "An example for using rule harvester",
+  "main": "build/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "start:dev": "nodemon",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@types/lodash": "^4.14.149",
+    "chokidar": "^3.3.1",
+    "lodash": "^4.17.15",
+    "log4js": "^6.1.0",
+    "rule-harvester": "file:.."
+  },
+  "devDependencies": {
+    "@types/node": "^13.1.6",
+    "nodemon": "^2.0.2",
+    "rimraf": "^3.0.0",
+    "ts-node": "^8.5.4",
+    "typescript": "^3.7.4"
+  },
+  "author": "Valtech: Daniel Morris",
+  "license": "ISC"
+}

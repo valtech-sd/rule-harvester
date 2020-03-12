@@ -1,0 +1,13 @@
+{
+    "product": "LotsOfVegies",
+    "shipping": {
+        "street": "123 sweet st.",
+        "city": "Orlando",
+        "state": "FL",
+        "zip": "54321"
+    },
+    "name": "Fred Jones",
+    "email": "fred@testsite.com",
+    "type": "food",
+    "price": 240.00
+}

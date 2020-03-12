@@ -1,0 +1,13 @@
+{
+    "product": "AwsomeEbookOfSomeSort",
+    "shipping": {
+        "street": "123 sweet st.",
+        "city": "San Diego",
+        "state": "CA",
+        "zip": "12345"
+    },
+    "name": "Fred Jones",
+    "email": "fred@testsite.com",
+    "type": "digital",
+    "price": 240.00
+}

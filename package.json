@@ -1,0 +1,38 @@
+{
+  "name": "rule-harvester",
+  "version": "0.0.4",
+  "description": "RuleHarvester is a rules engine for javascript",
+  "main": "build/index.js",
+  "types": "build/index.d.ts",
+  "scripts": {
+    "start:example": "cd examples && npm run start",
+    "start:example:dev": "nodemon",
+    "build": "rimraf ./build && tsc",
+    "test": "mocha -r ts-node/register ./tests/**/*.test.ts"
+  },
+  "dependencies": {
+    "lodash": "^4.17.15",
+    "log4js": "^6.1.0",
+    "rules-js": "^1.0.0"
+  },
+  "author": "Valtech: Daniel Morris",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/chai": "^4.2.7",
+    "@types/mocha": "^5.2.7",
+    "@types/node": "^13.1.6",
+    "@types/lodash": "^4.14.149",
+    "nodemon": "^2.0.2",
+    "rimraf": "^3.0.0",
+    "ts-node": "^8.5.4",
+    "ts-sinon": "^1.0.24",
+    "typescript": "^3.7.4",
+    "chai": "^4.2.0",
+    "mocha": "^7.0.0",
+    "sinon": "^8.1.0",
+    "ts-mock-imports": "^1.2.6"
+  },
+  "files": [
+    "build/**/*"
+  ]
+}

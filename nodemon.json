@@ -1,0 +1,6 @@
+{
+  "watch": ["src", "examples/src"],
+  "ext": ".ts,.js",
+  "ignore": [],
+  "exec": "tsc && npm run start:example"
+}
