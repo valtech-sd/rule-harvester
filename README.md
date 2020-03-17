@@ -130,6 +130,7 @@ The package comes with some configuration options.
 | provider.closures | Array<IClosure>         | Array of rule closures                     |
 | closureHandlerWrapper | (facts:any, context:any, handler:Function)=>Promise<any>| Wrapper function for all functional closures |
 
+
 The following shows how this can be configured
 
 ```javascript
