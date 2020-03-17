@@ -94,4 +94,66 @@ describe('Rules Harvester', () => {
       'Correct result in output'
     ).to.equal(true);
   });
+
+  it('Closure handler wrapper called', async () => {
+    let closureHandlerWrapperCallcount = 0;
+    const closureHandlerWrapper = async (
+      facts: any,
+      context: any,
+      handler: (facts: any, context: any) => any | Promise<any>
+    ) => {
+      closureHandlerWrapperCallcount++;
+      let res = await handler(facts, context);
+      return res;
+    };
+    const corpus = [
+      {
+        name: 'Set something',
+        rules: [
+          {
+            when: [{ closure: 'isMatch', 'event.type': 'test' }],
+            then: [{ closure: 'extendFacts', 'result.somethingSet': true }],
+          },
+        ],
+      },
+    ];
+    let {
+      config,
+      rulesInputStub,
+      rulesOutputStub,
+    } = Utils.generateRulesHarvesterConfig({
+      corpus,
+      extraConfig: {
+        closureHandlerWrapper: closureHandlerWrapper,
+      },
+    });
+    // Construct
+    let rulesHarvester = new RulesHarvester(config);
+
+    // Start - This registers the callback handler
+    rulesHarvester.start();
+
+    // Call the applyRule callback registered by the rules harvester that will end up applying rules
+    await rulesInputStub.registerInput.lastCall.args[0]({
+      event: {
+        type: 'test',
+      },
+    });
+
+    // This is to give the input handler time to run
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    expect(rulesOutputStub.outputResult.called, 'outputResult was not called')
+      .to.be.true;
+
+    expect(
+      rulesOutputStub.outputResult.lastCall.args[0].facts.result.somethingSet,
+      'Correct result in output'
+    ).to.equal(true);
+
+    expect(
+      closureHandlerWrapperCallcount,
+      'Closure handler wrapper call count was wrong'
+    ).to.equal(2);
+  });
 });

@@ -128,6 +128,8 @@ The package comes with some configuration options.
 | provider.inputs   | Array<IInputProvider>   | This is an array of input providers        |
 | provider.corpus   | Array<ICorpusRuleGroup> | This is an array of rule groups            |
 | provider.closures | Array<IClosure>         | Array of rule closures                     |
+| closureHandlerWrapper | (facts:any, context:any, handler:Function)=>Promise<any>| Wrapper function for all functional closures |
+
 
 The following shows how this can be configured
 

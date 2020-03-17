@@ -10,6 +10,7 @@ export interface IRuleHarvesterProviders {
 export interface IRuleHarvesterConfig {
     providers: IRuleHarvesterProviders;
     extraContext?: object | null;
+    closureHandlerWrapper?: (facts: any, context: any, handler: (facts: any, context: any) => any | Promise<any>) => any | Promise<any>;
 }
 export * from './types';
 export * from './generators';
@@ -21,6 +22,11 @@ export default class RuleHarvester {
     ruleGroups: string[];
     extraContext?: object | null;
     forbidenExtraContext: string[];
+    /*****************
+     * defaultClosureHandlerWrapper
+     * This wraps the closure handler so that we log errors well
+     ******************/
+    defaultClosureHandlerWrapper(name: string, handler: (facts: any, context: any) => any | Promise<any>, options?: any): (facts: any, context: any) => any | Promise<any>;
     /**
      * closureHandlerWrapper
      * This function is a wrapper to allow us to override the context of closure functions.

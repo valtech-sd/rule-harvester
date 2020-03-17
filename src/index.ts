@@ -20,6 +20,11 @@ export interface IRuleHarvesterProviders {
 export interface IRuleHarvesterConfig {
   providers: IRuleHarvesterProviders;
   extraContext?: object | null;
+  closureHandlerWrapper?: (
+    facts: any,
+    context: any,
+    handler: (facts: any, context: any) => any | Promise<any>
+  ) => any | Promise<any>;
 }
 
 export * from './types';
@@ -41,6 +46,40 @@ export default class RuleHarvester {
     'fact',
   ];
 
+  /*****************
+   * defaultClosureHandlerWrapper
+   * This wraps the closure handler so that we log errors well
+   ******************/
+  public defaultClosureHandlerWrapper(
+    name: string,
+    handler: (facts: any, context: any) => any | Promise<any>,
+    options?: any
+  ): (facts: any, context: any) => any | Promise<any> {
+    return async (facts: any, context: any) => {
+      // _.defaults overrides if a value does not already exist
+      // so extraContext cannot override fields that are already defined.
+      let result: any;
+      try {
+        let contextExt = _.defaults(context, this.extraContext);
+        contextExt.closureName = name;
+        contextExt.closureOptions = options;
+
+        result = this.config.closureHandlerWrapper // closureHandlerWrapper exist
+          ? await this.config.closureHandlerWrapper(facts, contextExt, handler) // then call wrapper funtion
+          : await handler(facts, contextExt); // else call handler directly
+      } catch (e) {
+        if (this.logger) {
+          this.logger.error(
+            `RuleHarvester.defaultClosureHandlerWrapper - Closure Name: ${name} - Error: `,
+            e
+          );
+        }
+        throw e;
+      }
+      return result;
+    };
+  }
+
   /**
    * closureHandlerWrapper
    * This function is a wrapper to allow us to override the context of closure functions.
@@ -51,23 +90,11 @@ export default class RuleHarvester {
    **/
   private closureHandlerWrapper(closure: IClosure) {
     if (closure.handler) {
-      let handler = closure.handler;
-      closure.handler = async (facts: any, context: any) => {
-        // _.defaults overrides if a value does not already exist
-        // so extraContext cannot override fields that are already defined.
-        let result: any;
-        try {
-          result = await handler(facts, _.defaults(context, this.extraContext));
-        } catch (e) {
-          if (this.logger) {
-            this.logger.error(
-              `RuleHarvester - Closure Name: ${closure.name} - Error: `,
-              e
-            );
-          }
-        }
-        return result;
-      };
+      closure.handler = this.defaultClosureHandlerWrapper(
+        closure.name,
+        closure.handler,
+        closure.options
+      );
     }
     return closure;
   }
@@ -87,42 +114,42 @@ export default class RuleHarvester {
     this.extraContext = config.extraContext;
     this.ruleGroups = [];
 
-    // Make sure extraContext is not using forbidden fields
-    let badContext = _.intersection(
-      _.keys(this.extraContext),
-      this.forbidenExtraContext
-    );
-    if ((badContext || []).length > 0) {
-      throw new Error(
-        `One of the extraContext fields specified is forbidden and could mess with the rules engine. (${badContext.join(
-          ', '
-        )})`
+    try {
+      // Make sure extraContext is not using forbidden fields
+      let badContext = _.intersection(
+        _.keys(this.extraContext),
+        this.forbidenExtraContext
       );
-    }
-
-    // This will be extend the context and be passed into closure handler functions
-    this.extraContext = _.defaults({}, config.extraContext || {}, {
-      logger: this.logger,
-    });
-
-    // Instantiate rules engine
-    this.engine = new Engine();
-    // Sets up closures for the provider for the rules engine
-    for (let closure of this.providers.closures) {
-      closure = this.closureHandlerWrapper(closure); // Wraps handler if needed
-
-      if (!closure.handler && closure.name && closure.rules) {
-        this.engine.add(closure, closure.options);
-      } else {
-        this.engine.closures.add(
-          closure.name,
-          closure.handler,
-          closure.options
+      if ((badContext || []).length > 0) {
+        throw new Error(
+          `One of the extraContext fields specified is forbidden and could mess with the rules engine. (${badContext.join(
+            ', '
+          )})`
         );
       }
-    }
-    // Add corpus definitions to the engine
-    try {
+
+      // This will be extend the context and be passed into closure handler functions
+      this.extraContext = _.defaults({}, config.extraContext || {}, {
+        logger: this.logger,
+      });
+
+      // Instantiate rules engine
+      this.engine = new Engine();
+      // Sets up closures for the provider for the rules engine
+      for (let closure of this.providers.closures) {
+        closure = this.closureHandlerWrapper(closure); // Wraps handler if needed
+
+        if (!closure.handler && closure.name && closure.rules) {
+          this.engine.add(closure, closure.options);
+        } else {
+          this.engine.closures.add(
+            closure.name,
+            closure.handler,
+            closure.options
+          );
+        }
+      }
+      // Add corpus definitions to the engine
       for (let corpus of this.providers.corpus) {
         this.ruleGroups.push(corpus.name);
         this.engine.add({
@@ -133,7 +160,7 @@ export default class RuleHarvester {
     } catch (e) {
       if (this.logger) {
         this.logger.fatal(
-          'RuleHarvester - Error during harvester engine setup. Possibly due to naming a non-existing closure',
+          'RuleHarvester - Error during harvester engine setup.',
           e
         );
       }

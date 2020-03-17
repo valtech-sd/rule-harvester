@@ -66,6 +66,7 @@ export default class Utils {
   static generateRulesHarvesterConfig({
     corpus = this.corpus,
     closures = this.closures,
+    extraConfig = {},
   }: any) {
     let rulesInputStub = stubInterface<IInputProvider>();
     let rulesOutputStub = stubInterface<IOutputProvider>();
@@ -74,15 +75,19 @@ export default class Utils {
     logger = log4js.getLogger('synchronous');
     logger.level = 'info';
 
-    let config = {
-      providers: {
-        inputs: [rulesInputStub],
-        outputs: [rulesOutputStub],
-        corpus,
-        closures,
-        logger,
+    let config = Object.assign(
+      {},
+      {
+        providers: {
+          inputs: [rulesInputStub],
+          outputs: [rulesOutputStub],
+          corpus,
+          closures,
+          logger,
+        },
       },
-    };
+      extraConfig
+    );
     return {
       logger,
       rulesInputStub,

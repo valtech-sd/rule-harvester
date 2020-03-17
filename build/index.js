@@ -69,30 +69,30 @@ var RuleHarvester = /** @class */ (function () {
         this.logger = config.providers.logger;
         this.extraContext = config.extraContext;
         this.ruleGroups = [];
-        // Make sure extraContext is not using forbidden fields
-        var badContext = lodash_1.default.intersection(lodash_1.default.keys(this.extraContext), this.forbidenExtraContext);
-        if ((badContext || []).length > 0) {
-            throw new Error("One of the extraContext fields specified is forbidden and could mess with the rules engine. (" + badContext.join(', ') + ")");
-        }
-        // This will be extend the context and be passed into closure handler functions
-        this.extraContext = lodash_1.default.defaults({}, config.extraContext || {}, {
-            logger: this.logger,
-        });
-        // Instantiate rules engine
-        this.engine = new rules_js_1.default();
-        // Sets up closures for the provider for the rules engine
-        for (var _i = 0, _a = this.providers.closures; _i < _a.length; _i++) {
-            var closure = _a[_i];
-            closure = this.closureHandlerWrapper(closure); // Wraps handler if needed
-            if (!closure.handler && closure.name && closure.rules) {
-                this.engine.add(closure, closure.options);
-            }
-            else {
-                this.engine.closures.add(closure.name, closure.handler, closure.options);
-            }
-        }
-        // Add corpus definitions to the engine
         try {
+            // Make sure extraContext is not using forbidden fields
+            var badContext = lodash_1.default.intersection(lodash_1.default.keys(this.extraContext), this.forbidenExtraContext);
+            if ((badContext || []).length > 0) {
+                throw new Error("One of the extraContext fields specified is forbidden and could mess with the rules engine. (" + badContext.join(', ') + ")");
+            }
+            // This will be extend the context and be passed into closure handler functions
+            this.extraContext = lodash_1.default.defaults({}, config.extraContext || {}, {
+                logger: this.logger,
+            });
+            // Instantiate rules engine
+            this.engine = new rules_js_1.default();
+            // Sets up closures for the provider for the rules engine
+            for (var _i = 0, _a = this.providers.closures; _i < _a.length; _i++) {
+                var closure = _a[_i];
+                closure = this.closureHandlerWrapper(closure); // Wraps handler if needed
+                if (!closure.handler && closure.name && closure.rules) {
+                    this.engine.add(closure, closure.options);
+                }
+                else {
+                    this.engine.closures.add(closure.name, closure.handler, closure.options);
+                }
+            }
+            // Add corpus definitions to the engine
             for (var _b = 0, _c = this.providers.corpus; _b < _c.length; _b++) {
                 var corpus = _c[_b];
                 this.ruleGroups.push(corpus.name);
@@ -104,11 +104,50 @@ var RuleHarvester = /** @class */ (function () {
         }
         catch (e) {
             if (this.logger) {
-                this.logger.fatal('RuleHarvester - Error during harvester engine setup. Possibly due to naming a non-existing closure', e);
+                this.logger.fatal('RuleHarvester - Error during harvester engine setup.', e);
             }
             throw e;
         }
     }
+    /*****************
+     * defaultClosureHandlerWrapper
+     * This wraps the closure handler so that we log errors well
+     ******************/
+    RuleHarvester.prototype.defaultClosureHandlerWrapper = function (name, handler, options) {
+        var _this = this;
+        return function (facts, context) { return __awaiter(_this, void 0, void 0, function () {
+            var result, contextExt, _a, e_1;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0:
+                        _b.trys.push([0, 5, , 6]);
+                        contextExt = lodash_1.default.defaults(context, this.extraContext);
+                        contextExt.closureName = name;
+                        contextExt.closureOptions = options;
+                        if (!this.config.closureHandlerWrapper // closureHandlerWrapper exist
+                        ) return [3 /*break*/, 2]; // closureHandlerWrapper exist
+                        return [4 /*yield*/, this.config.closureHandlerWrapper(facts, contextExt, handler)]; // then call wrapper funtion
+                    case 1:
+                        _a = _b.sent(); // then call wrapper funtion
+                        return [3 /*break*/, 4];
+                    case 2: return [4 /*yield*/, handler(facts, contextExt)];
+                    case 3:
+                        _a = _b.sent();
+                        _b.label = 4;
+                    case 4:
+                        result = _a; // else call handler directly
+                        return [3 /*break*/, 6];
+                    case 5:
+                        e_1 = _b.sent();
+                        if (this.logger) {
+                            this.logger.error("RuleHarvester.defaultClosureHandlerWrapper - Closure Name: " + name + " - Error: ", e_1);
+                        }
+                        throw e_1;
+                    case 6: return [2 /*return*/, result];
+                }
+            });
+        }); };
+    };
     /**
      * closureHandlerWrapper
      * This function is a wrapper to allow us to override the context of closure functions.
@@ -118,29 +157,8 @@ var RuleHarvester = /** @class */ (function () {
      * @return returns a wrapped closure function
      **/
     RuleHarvester.prototype.closureHandlerWrapper = function (closure) {
-        var _this = this;
         if (closure.handler) {
-            var handler_1 = closure.handler;
-            closure.handler = function (facts, context) { return __awaiter(_this, void 0, void 0, function () {
-                var result, e_1;
-                return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0:
-                            _a.trys.push([0, 2, , 3]);
-                            return [4 /*yield*/, handler_1(facts, lodash_1.default.defaults(context, this.extraContext))];
-                        case 1:
-                            result = _a.sent();
-                            return [3 /*break*/, 3];
-                        case 2:
-                            e_1 = _a.sent();
-                            if (this.logger) {
-                                this.logger.error("RuleHarvester - Closure Name: " + closure.name + " - Error: ", e_1);
-                            }
-                            return [3 /*break*/, 3];
-                        case 3: return [2 /*return*/, result];
-                    }
-                });
-            }); };
+            closure.handler = this.defaultClosureHandlerWrapper(closure.name, closure.handler, closure.options);
         }
         return closure;
     };
