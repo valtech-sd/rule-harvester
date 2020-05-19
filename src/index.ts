@@ -237,7 +237,11 @@ export default class RuleHarvester {
       }
 
       // If an error occured we want to throw it back to the input provider
-      if (error) throw error;
+      if (error) {
+        throw error;
+      } else {
+        return fact;
+      }
     }
   }
 }
