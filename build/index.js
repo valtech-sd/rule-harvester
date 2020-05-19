@@ -242,8 +242,12 @@ var RuleHarvester = /** @class */ (function () {
                         return [3 /*break*/, 10];
                     case 10:
                         // If an error occured we want to throw it back to the input provider
-                        if (error)
+                        if (error) {
                             throw error;
+                        }
+                        else {
+                            return [2 /*return*/, fact];
+                        }
                         _d.label = 11;
                     case 11: return [2 /*return*/];
                 }
