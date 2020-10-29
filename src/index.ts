@@ -217,7 +217,7 @@ export default class RuleHarvester {
             thisRunContext,
             facts: fact,
           }));
-          fact = factsAndContext.facts;
+          fact = factsAndContext?.facts;// If undefined facts then we still want to proceed
         }
       } catch (e) {
         error = e;
