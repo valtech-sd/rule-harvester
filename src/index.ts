@@ -72,7 +72,10 @@ export default class RuleHarvester {
           ? await this.config.closureHandlerWrapper(facts, contextExt, handler) // then call wrapper funtion
           : await handler(facts, contextExt); // else call handler directly
 
-        result = { facts: result, thisRunContext };
+        if (result) {
+          // If !result then it actually needs to return what was specified
+          result = { facts: result, thisRunContext };
+        }
       } catch (e) {
         if (this.logger) {
           this.logger.error(
