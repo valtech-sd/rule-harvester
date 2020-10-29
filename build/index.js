@@ -138,7 +138,10 @@ var RuleHarvester = /** @class */ (function () {
                         _b.label = 4;
                     case 4:
                         result = _a; // else call handler directly
-                        result = { facts: result, thisRunContext: thisRunContext };
+                        if (result) {
+                            // If !result then it actually needs to return what was specified
+                            result = { facts: result, thisRunContext: thisRunContext };
+                        }
                         return [3 /*break*/, 6];
                     case 5:
                         e_1 = _b.sent();
