@@ -192,7 +192,20 @@ describe('Rules Harvester', () => {
         rules: [
           {
             when: [{ closure: 'isMatch', 'event.type': 'test' }],
+            then: [{ closure: 'extendFacts', 'result.somethingSet': true }],
+          },
+        ],
+      },
+      {
+        name: 'Set something2',
+        rules: [
+          {
+            when: [{ closure: 'isMatch', 'event.type': 'test' }],
             then: [{ closure: 'extendFacts', 'result.somethingSet2': true }],
+          },
+          {
+            when: [{ closure: 'isMatch', 'event.type': 'test2' }],
+            then: [{ closure: 'extendFacts', 'result.somethingSet3': true }],
           },
         ],
       },
@@ -235,8 +248,13 @@ describe('Rules Harvester', () => {
     ).to.equal(true);
 
     expect(
+      rulesOutputStub.outputResult.lastCall.args[0].facts.result.somethingSet3,
+      'Condition returned true when it should have been false'
+    ).to.not.equal(true);
+
+    expect(
       closureHandlerWrapperCallcount,
       'Closure handler wrapper call count was wrong'
-    ).to.equal(2);
+    ).to.equal(5);
   });
 });
