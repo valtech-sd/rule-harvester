@@ -1,7 +1,9 @@
 // Interface for the rules input provider
 export interface IInputProvider {
   // setup(settings: any): Promise<any>;
-  registerInput(applyInputCb: (input: any) => Promise<any>): void;
+  registerInput(
+    applyInputCb: (input: any, runtimeContext?: any) => Promise<any>
+  ): void;
 }
 
 // Interface for the rules output provider

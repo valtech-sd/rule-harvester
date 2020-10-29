@@ -55,18 +55,24 @@ export default class RuleHarvester {
     handler: (facts: any, context: any) => any | Promise<any>,
     options?: any
   ): (facts: any, context: any) => any | Promise<any> {
-    return async (facts: any, context: any) => {
+    return async (factsAndOrRunContext: any, context: any) => {
       // _.defaults overrides if a value does not already exist
       // so extraContext cannot override fields that are already defined.
       let result: any;
       try {
-        let contextExt = _.defaults(context, this.extraContext);
+        // Parse thisRunContext outof facts
+        let thisRunContext = factsAndOrRunContext?.thisRunContext;
+        let facts = factsAndOrRunContext?.facts;
+
+        let contextExt = _.defaults(context, thisRunContext, this.extraContext);
         contextExt.closureName = name;
         contextExt.closureOptions = options;
 
         result = this.config.closureHandlerWrapper // closureHandlerWrapper exist
           ? await this.config.closureHandlerWrapper(facts, contextExt, handler) // then call wrapper funtion
           : await handler(facts, contextExt); // else call handler directly
+
+        result = { facts: result, thisRunContext };
       } catch (e) {
         if (this.logger) {
           this.logger.error(
@@ -89,14 +95,16 @@ export default class RuleHarvester {
    * @return returns a wrapped closure function
    **/
   private closureHandlerWrapper(closure: IClosure) {
+    let result = closure;
     if (closure.handler) {
-      closure.handler = this.defaultClosureHandlerWrapper(
+      result = Object.assign({}, closure);
+      result.handler = this.defaultClosureHandlerWrapper(
         closure.name,
         closure.handler,
         closure.options
       );
     }
-    return closure;
+    return result;
   }
   /**
    * Constructor
@@ -189,7 +197,7 @@ export default class RuleHarvester {
    * 1. Process rules using the rules engine
    * 2. Send the resulting facts to the output providers
    **/
-  async applyRule(input: any) {
+  async applyRule(input: any, thisRunContext: any = null) {
     if (input) {
       let fact = input;
       let group = input;
@@ -198,7 +206,15 @@ export default class RuleHarvester {
         for (group of this.ruleGroups) {
           // Loop over grouops and set the fact from previous
           // rules group to the input fact for the next rules grup
-          ({ fact } = await this.engine.process(group, fact));
+          // thisRunContext + fact is passed in as a single object
+          // Our defaultClosureHandlerWrapper above will parse this out
+          // and pass facts to the original handler and extend context with thisRunContext
+          let factsAndContext: any;
+          ({ fact: factsAndContext } = await this.engine.process(group, {
+            thisRunContext,
+            facts: fact,
+          }));
+          fact = factsAndContext.facts;
         }
       } catch (e) {
         error = e;
