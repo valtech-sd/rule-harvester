@@ -217,7 +217,7 @@ var RuleHarvester = /** @class */ (function () {
                             })];
                     case 3:
                         (factsAndContext = (_d.sent()).fact);
-                        fact = factsAndContext.facts;
+                        fact = factsAndContext === null || factsAndContext === void 0 ? void 0 : factsAndContext.facts;
                         _d.label = 4;
                     case 4:
                         _i++;

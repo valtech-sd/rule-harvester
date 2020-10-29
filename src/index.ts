@@ -217,7 +217,7 @@ export default class RuleHarvester {
             thisRunContext,
             facts: fact,
           }));
-          fact = factsAndContext.facts;
+          fact = factsAndContext?.facts;
         }
       } catch (e) {
         error = e;
