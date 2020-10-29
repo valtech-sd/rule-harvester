@@ -1,5 +1,5 @@
 export interface IInputProvider {
-    registerInput(applyInputCb: (input: any) => Promise<any>): void;
+    registerInput(applyInputCb: (input: any, runtimeContext?: any) => Promise<any>): void;
 }
 export interface IOutputProvider {
     outputResult(result: any): Promise<any>;
