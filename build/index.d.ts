@@ -60,5 +60,5 @@ export default class RuleHarvester {
      * 1. Process rules using the rules engine
      * 2. Send the resulting facts to the output providers
      **/
-    applyRule(input: any): Promise<any>;
+    applyRule(input: any, thisRunContext?: any): Promise<any>;
 }

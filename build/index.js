@@ -115,13 +115,15 @@ var RuleHarvester = /** @class */ (function () {
      ******************/
     RuleHarvester.prototype.defaultClosureHandlerWrapper = function (name, handler, options) {
         var _this = this;
-        return function (facts, context) { return __awaiter(_this, void 0, void 0, function () {
-            var result, contextExt, _a, e_1;
+        return function (factsAndOrRunContext, context) { return __awaiter(_this, void 0, void 0, function () {
+            var result, thisRunContext, facts, contextExt, _a, e_1;
             return __generator(this, function (_b) {
                 switch (_b.label) {
                     case 0:
                         _b.trys.push([0, 5, , 6]);
-                        contextExt = lodash_1.default.defaults(context, this.extraContext);
+                        thisRunContext = factsAndOrRunContext === null || factsAndOrRunContext === void 0 ? void 0 : factsAndOrRunContext.thisRunContext;
+                        facts = factsAndOrRunContext === null || factsAndOrRunContext === void 0 ? void 0 : factsAndOrRunContext.facts;
+                        contextExt = lodash_1.default.defaults(context, thisRunContext, this.extraContext);
                         contextExt.closureName = name;
                         contextExt.closureOptions = options;
                         if (!this.config.closureHandlerWrapper // closureHandlerWrapper exist
@@ -136,6 +138,7 @@ var RuleHarvester = /** @class */ (function () {
                         _b.label = 4;
                     case 4:
                         result = _a; // else call handler directly
+                        result = { facts: result, thisRunContext: thisRunContext };
                         return [3 /*break*/, 6];
                     case 5:
                         e_1 = _b.sent();
@@ -157,10 +160,12 @@ var RuleHarvester = /** @class */ (function () {
      * @return returns a wrapped closure function
      **/
     RuleHarvester.prototype.closureHandlerWrapper = function (closure) {
+        var result = closure;
         if (closure.handler) {
-            closure.handler = this.defaultClosureHandlerWrapper(closure.name, closure.handler, closure.options);
+            result = Object.assign({}, closure);
+            result.handler = this.defaultClosureHandlerWrapper(closure.name, closure.handler, closure.options);
         }
-        return closure;
+        return result;
     };
     /**
      * start the Rules Harvester.
@@ -183,9 +188,10 @@ var RuleHarvester = /** @class */ (function () {
      * 1. Process rules using the rules engine
      * 2. Send the resulting facts to the output providers
      **/
-    RuleHarvester.prototype.applyRule = function (input) {
+    RuleHarvester.prototype.applyRule = function (input, thisRunContext) {
+        if (thisRunContext === void 0) { thisRunContext = null; }
         return __awaiter(this, void 0, void 0, function () {
-            var fact, group, error, _i, _a, e_2, proms, _b, _c, output, e_3;
+            var fact, group, error, _i, _a, factsAndContext, e_2, proms, _b, _c, output, e_3;
             return __generator(this, function (_d) {
                 switch (_d.label) {
                     case 0:
@@ -201,11 +207,14 @@ var RuleHarvester = /** @class */ (function () {
                     case 2:
                         if (!(_i < _a.length)) return [3 /*break*/, 5];
                         group = _a[_i];
-                        return [4 /*yield*/, this.engine.process(group, fact)];
+                        factsAndContext = void 0;
+                        return [4 /*yield*/, this.engine.process(group, {
+                                thisRunContext: thisRunContext,
+                                facts: fact,
+                            })];
                     case 3:
-                        // Loop over grouops and set the fact from previous
-                        // rules group to the input fact for the next rules grup
-                        (fact = (_d.sent()).fact);
+                        (factsAndContext = (_d.sent()).fact);
+                        fact = factsAndContext.facts;
                         _d.label = 4;
                     case 4:
                         _i++;
