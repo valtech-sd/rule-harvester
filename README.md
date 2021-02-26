@@ -359,3 +359,6 @@ ruleHarvester.start();
 
 **Full Example**: Can be found in `./examples`
 
+## License
+
+Rules Harvester uses an MIT license. Please refer to the license [here](LICENSE.md).
