@@ -22,6 +22,7 @@ export default class RuleHarvester {
     ruleGroups: string[];
     extraContext?: object | null;
     forbidenExtraContext: string[];
+    isSetup: boolean;
     /*****************
      * defaultClosureHandlerWrapper
      * This wraps the closure handler so that we log errors well
@@ -39,16 +40,24 @@ export default class RuleHarvester {
     /**
      * Constructor
      * This function configures the engine.
-     * 1. Instantiates the engine
-     * 2. Sets up the engine corpus (definitions)
-     * 3. Sets of the closers (Available funciton closures for the corpus to work from)
+     * 1. Setup class variables
      * @params config: IRuleHarvesterConfig
      * @returns - None
      **/
     constructor(config: IRuleHarvesterConfig);
     /**
+     * Setup
+     * This function configures the engine.
+     * 1. Instantiates the engine
+     * 2. Sets up the engine corpus (definitions)
+     * 3. Sets of the closers (Available funciton closures for the corpus to work from)
+     * @returns - None
+     **/
+    setup(): void;
+    /**
      * start the Rules Harvester.
      * Does this by...
+     * 1. Run setup input provider to initialize the rules enigne
      * 1. Does this by registering an input handler for each rule input
      * @params - None
      * @returns void
@@ -60,5 +69,5 @@ export default class RuleHarvester {
      * 1. Process rules using the rules engine
      * 2. Send the resulting facts to the output providers
      **/
-    applyRule(input: any, thisRunContext?: any): Promise<any>;
+    applyRule(input: any, thisRunContext?: any, ruleGroupOverrides?: string[] | undefined): Promise<any>;
 }

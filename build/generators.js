@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.closureGenerator = void 0;
 /****
  *  closureGenerator
  *  This generates a closure definition

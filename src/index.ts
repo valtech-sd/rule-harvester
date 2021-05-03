@@ -45,6 +45,7 @@ export default class RuleHarvester {
     'currentRuleFlowActivated',
     'fact',
   ];
+  isSetup: boolean = false;
 
   /*****************
    * defaultClosureHandlerWrapper
@@ -112,9 +113,7 @@ export default class RuleHarvester {
   /**
    * Constructor
    * This function configures the engine.
-   * 1. Instantiates the engine
-   * 2. Sets up the engine corpus (definitions)
-   * 3. Sets of the closers (Available funciton closures for the corpus to work from)
+   * 1. Setup class variables
    * @params config: IRuleHarvesterConfig
    * @returns - None
    **/
@@ -124,8 +123,19 @@ export default class RuleHarvester {
     this.logger = config.providers.logger;
     this.extraContext = config.extraContext;
     this.ruleGroups = [];
+  }
 
+  /**
+   * Setup
+   * This function configures the engine.
+   * 1. Instantiates the engine
+   * 2. Sets up the engine corpus (definitions)
+   * 3. Sets of the closers (Available funciton closures for the corpus to work from)
+   * @returns - None
+   **/
+  setup() {
     try {
+      if (this.isSetup) return;
       // Make sure extraContext is not using forbidden fields
       let badContext = _.intersection(
         _.keys(this.extraContext),
@@ -140,7 +150,7 @@ export default class RuleHarvester {
       }
 
       // This will be extend the context and be passed into closure handler functions
-      this.extraContext = _.defaults({}, config.extraContext || {}, {
+      this.extraContext = _.defaults({}, this.extraContext || {}, {
         logger: this.logger,
       });
 
@@ -168,6 +178,8 @@ export default class RuleHarvester {
           rules: corpus.rules,
         });
       }
+
+      this.isSetup = true;
     } catch (e) {
       if (this.logger) {
         this.logger.fatal(
@@ -182,11 +194,13 @@ export default class RuleHarvester {
   /**
    * start the Rules Harvester.
    * Does this by...
+   * 1. Run setup input provider to initialize the rules enigne
    * 1. Does this by registering an input handler for each rule input
    * @params - None
    * @returns void
    **/
   start() {
+    this.setup();
     // We bind to the applyRule to this because otherwise the calling context would
     // be from the input provider insetad of the local class
     for (let ruleInput of this.providers.inputs) {
@@ -200,13 +214,19 @@ export default class RuleHarvester {
    * 1. Process rules using the rules engine
    * 2. Send the resulting facts to the output providers
    **/
-  async applyRule(input: any, thisRunContext: any = null) {
+  async applyRule(
+    input: any,
+    thisRunContext: any = null,
+    ruleGroupOverrides: string[] | undefined = undefined
+  ) {
     if (input) {
       let fact = input;
       let group = input;
       let error = null;
       try {
-        for (group of this.ruleGroups) {
+        let ruleGroups = ruleGroupOverrides || this.ruleGroups;
+        ruleGroups = typeof ruleGroups === 'string' ? [ruleGroups] : ruleGroups;
+        for (group of ruleGroups) {
           // Loop over grouops and set the fact from previous
           // rules group to the input fact for the next rules grup
           // thisRunContext + fact is passed in as a single object
@@ -217,7 +237,7 @@ export default class RuleHarvester {
             thisRunContext,
             facts: fact,
           }));
-          fact = factsAndContext?.facts;// If undefined facts then we still want to proceed
+          fact = factsAndContext?.facts; // If undefined facts then we still want to proceed
         }
       } catch (e) {
         error = e;

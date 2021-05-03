@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import _ from 'lodash';
 import 'mocha';
 import Utils from '../utils';
-import RulesHarvester from '../../src';
+import RulesHarvester, { closureGenerator } from '../../src';
 
 describe('Rules Harvester', () => {
   // Just make sure it initializes
@@ -11,7 +11,7 @@ describe('Rules Harvester', () => {
       .not.be.undefined;
   });
 
-  it('Rules where added', () => {
+  it('Rules were added', () => {
     const ruleCorpuses = [
       {
         name: 'Set something',
@@ -25,6 +25,7 @@ describe('Rules Harvester', () => {
     ];
     let { config } = Utils.generateRulesHarvesterConfig({ ruleCorpuses });
     let rulesHarvester = new RulesHarvester(config);
+    rulesHarvester.setup(); // This needs run after constructure
     expect(
       rulesHarvester.ruleGroups.length,
       'ruleGroups should have some rules pushed into it'

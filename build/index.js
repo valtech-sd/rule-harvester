@@ -1,4 +1,14 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __exportStar = (this && this.__exportStar) || function(m, exports) {
+    for (var p in m) if (p !== "default" && !exports.hasOwnProperty(p)) __createBinding(exports, m, p);
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -35,9 +45,6 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-function __export(m) {
-    for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
-}
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -45,14 +52,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 //@ts-ignore
 var rules_js_1 = __importDefault(require("rules-js"));
 var lodash_1 = __importDefault(require("lodash"));
-__export(require("./generators"));
+__exportStar(require("./types"), exports);
+__exportStar(require("./generators"), exports);
 var RuleHarvester = /** @class */ (function () {
     /**
      * Constructor
      * This function configures the engine.
-     * 1. Instantiates the engine
-     * 2. Sets up the engine corpus (definitions)
-     * 3. Sets of the closers (Available funciton closures for the corpus to work from)
+     * 1. Setup class variables
      * @params config: IRuleHarvesterConfig
      * @returns - None
      **/
@@ -64,50 +70,12 @@ var RuleHarvester = /** @class */ (function () {
             'currentRuleFlowActivated',
             'fact',
         ];
+        this.isSetup = false;
         this.providers = config.providers;
         this.config = config;
         this.logger = config.providers.logger;
         this.extraContext = config.extraContext;
         this.ruleGroups = [];
-        try {
-            // Make sure extraContext is not using forbidden fields
-            var badContext = lodash_1.default.intersection(lodash_1.default.keys(this.extraContext), this.forbidenExtraContext);
-            if ((badContext || []).length > 0) {
-                throw new Error("One of the extraContext fields specified is forbidden and could mess with the rules engine. (" + badContext.join(', ') + ")");
-            }
-            // This will be extend the context and be passed into closure handler functions
-            this.extraContext = lodash_1.default.defaults({}, config.extraContext || {}, {
-                logger: this.logger,
-            });
-            // Instantiate rules engine
-            this.engine = new rules_js_1.default();
-            // Sets up closures for the provider for the rules engine
-            for (var _i = 0, _a = this.providers.closures; _i < _a.length; _i++) {
-                var closure = _a[_i];
-                closure = this.closureHandlerWrapper(closure); // Wraps handler if needed
-                if (!closure.handler && closure.name && closure.rules) {
-                    this.engine.add(closure, closure.options);
-                }
-                else {
-                    this.engine.closures.add(closure.name, closure.handler, closure.options);
-                }
-            }
-            // Add corpus definitions to the engine
-            for (var _b = 0, _c = this.providers.corpus; _b < _c.length; _b++) {
-                var corpus = _c[_b];
-                this.ruleGroups.push(corpus.name);
-                this.engine.add({
-                    name: corpus.name,
-                    rules: corpus.rules,
-                });
-            }
-        }
-        catch (e) {
-            if (this.logger) {
-                this.logger.fatal('RuleHarvester - Error during harvester engine setup.', e);
-            }
-            throw e;
-        }
     }
     /*****************
      * defaultClosureHandlerWrapper
@@ -171,13 +139,67 @@ var RuleHarvester = /** @class */ (function () {
         return result;
     };
     /**
+     * Setup
+     * This function configures the engine.
+     * 1. Instantiates the engine
+     * 2. Sets up the engine corpus (definitions)
+     * 3. Sets of the closers (Available funciton closures for the corpus to work from)
+     * @returns - None
+     **/
+    RuleHarvester.prototype.setup = function () {
+        try {
+            if (this.isSetup)
+                return;
+            // Make sure extraContext is not using forbidden fields
+            var badContext = lodash_1.default.intersection(lodash_1.default.keys(this.extraContext), this.forbidenExtraContext);
+            if ((badContext || []).length > 0) {
+                throw new Error("One of the extraContext fields specified is forbidden and could mess with the rules engine. (" + badContext.join(', ') + ")");
+            }
+            // This will be extend the context and be passed into closure handler functions
+            this.extraContext = lodash_1.default.defaults({}, this.extraContext || {}, {
+                logger: this.logger,
+            });
+            // Instantiate rules engine
+            this.engine = new rules_js_1.default();
+            // Sets up closures for the provider for the rules engine
+            for (var _i = 0, _a = this.providers.closures; _i < _a.length; _i++) {
+                var closure = _a[_i];
+                closure = this.closureHandlerWrapper(closure); // Wraps handler if needed
+                if (!closure.handler && closure.name && closure.rules) {
+                    this.engine.add(closure, closure.options);
+                }
+                else {
+                    this.engine.closures.add(closure.name, closure.handler, closure.options);
+                }
+            }
+            // Add corpus definitions to the engine
+            for (var _b = 0, _c = this.providers.corpus; _b < _c.length; _b++) {
+                var corpus = _c[_b];
+                this.ruleGroups.push(corpus.name);
+                this.engine.add({
+                    name: corpus.name,
+                    rules: corpus.rules,
+                });
+            }
+            this.isSetup = true;
+        }
+        catch (e) {
+            if (this.logger) {
+                this.logger.fatal('RuleHarvester - Error during harvester engine setup.', e);
+            }
+            throw e;
+        }
+    };
+    /**
      * start the Rules Harvester.
      * Does this by...
+     * 1. Run setup input provider to initialize the rules enigne
      * 1. Does this by registering an input handler for each rule input
      * @params - None
      * @returns void
      **/
     RuleHarvester.prototype.start = function () {
+        this.setup();
         // We bind to the applyRule to this because otherwise the calling context would
         // be from the input provider insetad of the local class
         for (var _i = 0, _a = this.providers.inputs; _i < _a.length; _i++) {
@@ -191,50 +213,53 @@ var RuleHarvester = /** @class */ (function () {
      * 1. Process rules using the rules engine
      * 2. Send the resulting facts to the output providers
      **/
-    RuleHarvester.prototype.applyRule = function (input, thisRunContext) {
+    RuleHarvester.prototype.applyRule = function (input, thisRunContext, ruleGroupOverrides) {
         if (thisRunContext === void 0) { thisRunContext = null; }
+        if (ruleGroupOverrides === void 0) { ruleGroupOverrides = undefined; }
         return __awaiter(this, void 0, void 0, function () {
-            var fact, group, error, _i, _a, factsAndContext, e_2, proms, _b, _c, output, e_3;
-            return __generator(this, function (_d) {
-                switch (_d.label) {
+            var fact, group, error, ruleGroups, _i, ruleGroups_1, factsAndContext, e_2, proms, _a, _b, output, e_3;
+            return __generator(this, function (_c) {
+                switch (_c.label) {
                     case 0:
                         if (!input) return [3 /*break*/, 11];
                         fact = input;
                         group = input;
                         error = null;
-                        _d.label = 1;
+                        _c.label = 1;
                     case 1:
-                        _d.trys.push([1, 6, , 7]);
-                        _i = 0, _a = this.ruleGroups;
-                        _d.label = 2;
+                        _c.trys.push([1, 6, , 7]);
+                        ruleGroups = ruleGroupOverrides || this.ruleGroups;
+                        ruleGroups = typeof ruleGroups === 'string' ? [ruleGroups] : ruleGroups;
+                        _i = 0, ruleGroups_1 = ruleGroups;
+                        _c.label = 2;
                     case 2:
-                        if (!(_i < _a.length)) return [3 /*break*/, 5];
-                        group = _a[_i];
+                        if (!(_i < ruleGroups_1.length)) return [3 /*break*/, 5];
+                        group = ruleGroups_1[_i];
                         factsAndContext = void 0;
                         return [4 /*yield*/, this.engine.process(group, {
                                 thisRunContext: thisRunContext,
                                 facts: fact,
                             })];
                     case 3:
-                        (factsAndContext = (_d.sent()).fact);
-                        fact = factsAndContext === null || factsAndContext === void 0 ? void 0 : factsAndContext.facts;
-                        _d.label = 4;
+                        (factsAndContext = (_c.sent()).fact);
+                        fact = factsAndContext === null || factsAndContext === void 0 ? void 0 : factsAndContext.facts; // If undefined facts then we still want to proceed
+                        _c.label = 4;
                     case 4:
                         _i++;
                         return [3 /*break*/, 2];
                     case 5: return [3 /*break*/, 7];
                     case 6:
-                        e_2 = _d.sent();
+                        e_2 = _c.sent();
                         error = e_2;
                         if (this.logger) {
                             this.logger.error('RuleHarvester - Error: An error occurred while processing rule', "GROUP: " + group + ", fact: " + JSON.stringify(fact, null, 2), e_2);
                         }
                         return [3 /*break*/, 7];
                     case 7:
-                        _d.trys.push([7, 9, , 10]);
+                        _c.trys.push([7, 9, , 10]);
                         proms = [];
-                        for (_b = 0, _c = this.providers.outputs; _b < _c.length; _b++) {
-                            output = _c[_b];
+                        for (_a = 0, _b = this.providers.outputs; _a < _b.length; _a++) {
+                            output = _b[_a];
                             proms.push(output.outputResult({
                                 facts: fact,
                                 error: error,
@@ -243,10 +268,10 @@ var RuleHarvester = /** @class */ (function () {
                         }
                         return [4 /*yield*/, Promise.all(proms)];
                     case 8:
-                        _d.sent();
+                        _c.sent();
                         return [3 /*break*/, 10];
                     case 9:
-                        e_3 = _d.sent();
+                        e_3 = _c.sent();
                         error = e_3;
                         if (this.logger) {
                             this.logger.error('RuleHarvester - Error: An error occurred while processing rule', "GROUP: " + group + ", fact: " + JSON.stringify(fact, null, 2), e_3);
@@ -260,7 +285,7 @@ var RuleHarvester = /** @class */ (function () {
                         else {
                             return [2 /*return*/, fact];
                         }
-                        _d.label = 11;
+                        _c.label = 11;
                     case 11: return [2 /*return*/];
                 }
             });
