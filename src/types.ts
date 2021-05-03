@@ -2,7 +2,11 @@
 export interface IInputProvider {
   // setup(settings: any): Promise<any>;
   registerInput(
-    applyInputCb: (input: any, runtimeContext?: any) => Promise<any>
+    applyInputCb: (
+      input: any,
+      runtimeContext?: any,
+      ruleGroupOverrides?: string[]
+    ) => Promise<any>
   ): void;
 }
 
