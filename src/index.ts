@@ -45,7 +45,6 @@ export default class RuleHarvester {
     'currentRuleFlowActivated',
     'fact',
   ];
-  isSetup: boolean = false;
 
   /*****************
    * defaultClosureHandlerWrapper
@@ -135,7 +134,10 @@ export default class RuleHarvester {
    **/
   setup() {
     try {
-      if (this.isSetup) return;
+      this.providers = this.config.providers;
+      this.logger = this.config.providers.logger;
+      this.extraContext = this.config.extraContext;
+      this.ruleGroups = [];
       // Make sure extraContext is not using forbidden fields
       let badContext = _.intersection(
         _.keys(this.extraContext),
@@ -178,8 +180,6 @@ export default class RuleHarvester {
           rules: corpus.rules,
         });
       }
-
-      this.isSetup = true;
     } catch (e) {
       if (this.logger) {
         this.logger.fatal(
@@ -194,18 +194,19 @@ export default class RuleHarvester {
   /**
    * start the Rules Harvester.
    * Does this by...
-   * 1. Run setup input provider to initialize the rules enigne
    * 1. Does this by registering an input handler for each rule input
+   * 2. Run setup input provider to initialize the rules enigne
+   * NOTE: Setup is purposly run after registerInput because the input provider should be able to modify the corpus or configuration during setup
    * @params - None
    * @returns void
    **/
   start() {
-    this.setup();
     // We bind to the applyRule to this because otherwise the calling context would
     // be from the input provider insetad of the local class
     for (let ruleInput of this.providers.inputs) {
-      ruleInput.registerInput(this.applyRule.bind(this));
+      ruleInput.registerInput(this.applyRule.bind(this), this.config);
     }
+    this.setup();
   }
 
   /**

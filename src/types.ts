@@ -1,3 +1,4 @@
+import { IRuleHarvesterConfig } from './index';
 // Interface for the rules input provider
 export interface IInputProvider {
   // setup(settings: any): Promise<any>;
@@ -6,7 +7,8 @@ export interface IInputProvider {
       input: any,
       runtimeContext?: any,
       ruleGroupOverrides?: string[]
-    ) => Promise<any>
+    ) => Promise<any>,
+    ruleHarvesterConfig?: IRuleHarvesterConfig
   ): void;
 }
 
@@ -18,6 +20,7 @@ export interface IOutputProvider {
 
 export interface ICorpusRuleGroup {
   name: string;
+  config?: any; // The Input provider can use this to configure a rule group in custom ways
   rules: ICorpusRule[];
 }
 
@@ -31,12 +34,6 @@ export interface ICorpusProvider {
   corpuses: ICorpusRuleGroup[];
   closures: any[];
 }
-
-// Interface for the rules corpus provider
-//export interface IRuleCorpusesProvider {
-//  corpuses: Object[];
-//  closures: any[];
-//}
 
 export interface IClosure {
   name: string;
