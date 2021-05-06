@@ -68,6 +68,19 @@ export default class RuleHarvester {
         contextExt.closureName = name;
         contextExt.closureOptions = options;
 
+        let parameterKeys = Object.keys(contextExt.parameters || []);
+        for (let i = 0; i < parameterKeys.length; i++) {
+          const key = parameterKeys[i];
+          if (key.charAt(0) === '^') {
+            const newKey = parameterKeys[i].substr(1);
+            contextExt.parameters[newKey] = _.get(
+              facts,
+              contextExt.parameters[key]
+            );
+            delete contextExt.parameters[key];
+          }
+        }
+
         result = this.config.closureHandlerWrapper // closureHandlerWrapper exist
           ? await this.config.closureHandlerWrapper(facts, contextExt, handler) // then call wrapper funtion
           : await handler(facts, contextExt); // else call handler directly

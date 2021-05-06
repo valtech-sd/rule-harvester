@@ -22,7 +22,6 @@ export default class RuleHarvester {
     ruleGroups: string[];
     extraContext?: object | null;
     forbidenExtraContext: string[];
-    isSetup: boolean;
     /*****************
      * defaultClosureHandlerWrapper
      * This wraps the closure handler so that we log errors well
@@ -57,8 +56,9 @@ export default class RuleHarvester {
     /**
      * start the Rules Harvester.
      * Does this by...
-     * 1. Run setup input provider to initialize the rules enigne
      * 1. Does this by registering an input handler for each rule input
+     * 2. Run setup input provider to initialize the rules enigne
+     * NOTE: Setup is purposly run after registerInput because the input provider should be able to modify the corpus or configuration during setup
      * @params - None
      * @returns void
      **/

@@ -258,4 +258,140 @@ describe('Rules Harvester', () => {
       'Closure handler wrapper call count was wrong'
     ).to.equal(5);
   });
+
+  it('applyRule ruleGroupOverrides works', async () => {
+    let runTimeContext = { runTimeContextValue: 'SomRuntimeValue' };
+    const corpus = [
+      {
+        name: 'SetSomething1Group',
+        rules: [
+          {
+            when: [{ closure: 'isMatch', 'event.type': 'test' }],
+            then: [{ closure: 'extendFacts', 'result.somethingSet': true }],
+          },
+        ],
+      },
+      {
+        name: 'SetSomething2Group',
+        rules: [
+          {
+            when: [{ closure: 'isMatch', 'event.type': 'test' }],
+            then: [{ closure: 'extendFacts', 'result.somethingSet2': true }],
+          },
+          {
+            when: [{ closure: 'isMatch', 'event.type': 'test2' }],
+            then: [{ closure: 'extendFacts', 'result.somethingSet3': true }],
+          },
+        ],
+      },
+    ];
+    let {
+      config,
+      rulesInputStub,
+      rulesOutputStub,
+    } = Utils.generateRulesHarvesterConfig({
+      corpus,
+      extraConfig: {},
+    });
+    // Construct
+    let rulesHarvester = new RulesHarvester(config);
+
+    // Start - This registers the callback handler
+    rulesHarvester.start();
+
+    // Call the applyRule callback registered by the rules harvester that will end up applying rules
+    await rulesInputStub.registerInput.lastCall.args[0](
+      {
+        event: {
+          type: 'test',
+        },
+      },
+      runTimeContext,
+      ['SetSomething2Group']
+    );
+
+    // This is to give the input handler time to run
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    expect(rulesOutputStub.outputResult.called, 'outputResult was not called')
+      .to.be.true;
+
+    // Should not call this for the specified ruleGroupOverrides
+    expect(
+      rulesOutputStub.outputResult.lastCall.args[0].facts.result.somethingSet,
+      'Value was set but should not have been given the ruleGroupOverrides that was set'
+    ).to.not.equal(true);
+
+    // Should call this for the specified ruleGroupOverrides
+    expect(
+      rulesOutputStub.outputResult.lastCall.args[0].facts.result.somethingSet2,
+      'Correct result in output'
+    ).to.equal(true);
+
+    expect(
+      rulesOutputStub.outputResult.lastCall.args[0].facts.result.somethingSet3,
+      'Condition returned true when it should have been false'
+    ).to.not.equal(true);
+  });
+
+  it('applyRule hat (^) parameter set passed parameter from facts path', async () => {
+    let runTimeContext = { runTimeContextValue: 'SomRuntimeValue' };
+    const corpus = [
+      {
+        name: 'TestHatPathsGroup',
+        rules: [
+          {
+            when: ['always'],
+            then: [
+              { closure: 'extendFacts', '^result.eventType': 'event.type' },
+            ],
+          },
+        ],
+      },
+    ];
+    let {
+      config,
+      rulesInputStub,
+      rulesOutputStub,
+    } = Utils.generateRulesHarvesterConfig({
+      corpus,
+      closures: [
+        ...Utils.closures,
+        {
+          name: 'always',
+          handler(_facts: any, _context: any) {
+            return true;
+          },
+        },
+      ],
+      extraConfig: {},
+    });
+    // Construct
+    let rulesHarvester = new RulesHarvester(config);
+
+    // Start - This registers the callback handler
+    rulesHarvester.start();
+
+    // Call the applyRule callback registered by the rules harvester that will end up applying rules
+    await rulesInputStub.registerInput.lastCall.args[0](
+      {
+        event: {
+          type: 'goldrush',
+        },
+      },
+      runTimeContext
+    );
+
+    // This is to give the input handler time to run
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    expect(rulesOutputStub.outputResult.called, 'outputResult was not called')
+      .to.be.true;
+
+    // Should not call this for the specified ruleGroupOverrides
+    expect(
+      rulesOutputStub.outputResult.lastCall.args[0].facts.result?.eventType,
+      'Hat parmameter does not appear to have correctly been parsed'
+    ).to.equal('goldrush');
+  });
 });

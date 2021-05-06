@@ -1,4 +1,4 @@
-import { IClosure } from './types';
+import { IClosure, ICorpusRule } from './types';
 /****
  *  closureGenerator
  *  This generates a closure definition
@@ -7,4 +7,4 @@ import { IClosure } from './types';
  *  @param options:any - Optional parameter used to define required parameters for closure
  *  @return Returns closure definition
  ****/
-export declare function closureGenerator(name: string, handler: (facts: any, context: any) => any, options?: any): IClosure;
+export declare function closureGenerator(name: string, handlerOrRules: ICorpusRule[] | ((facts: any, context: any) => any), options?: any): IClosure;
