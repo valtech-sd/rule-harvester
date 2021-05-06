@@ -1,4 +1,4 @@
-import { IClosure } from './types';
+import { IClosure, ICorpusRule } from './types';
 /****
  *  closureGenerator
  *  This generates a closure definition
@@ -9,12 +9,17 @@ import { IClosure } from './types';
  ****/
 export function closureGenerator(
   name: string,
-  handler: (facts: any, context: any) => any,
+  handlerOrRules: ICorpusRule[] | ((facts: any, context: any) => any),
   options?: any
 ): IClosure {
-  return {
+  let closure: IClosure = {
     name,
-    handler,
     options: options,
   };
+  if (Array.isArray(handlerOrRules)) {
+    closure.rules = handlerOrRules;
+  } else {
+    closure.handler = handlerOrRules;
+  }
+  return closure;
 }

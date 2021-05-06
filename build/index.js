@@ -70,7 +70,6 @@ var RuleHarvester = /** @class */ (function () {
             'currentRuleFlowActivated',
             'fact',
         ];
-        this.isSetup = false;
         this.providers = config.providers;
         this.config = config;
         this.logger = config.providers.logger;
@@ -84,7 +83,7 @@ var RuleHarvester = /** @class */ (function () {
     RuleHarvester.prototype.defaultClosureHandlerWrapper = function (name, handler, options) {
         var _this = this;
         return function (factsAndOrRunContext, context) { return __awaiter(_this, void 0, void 0, function () {
-            var result, thisRunContext, facts, contextExt, _a, e_1;
+            var result, thisRunContext, facts, contextExt, parameterKeys, i, key, newKey, _a, e_1;
             return __generator(this, function (_b) {
                 switch (_b.label) {
                     case 0:
@@ -94,6 +93,15 @@ var RuleHarvester = /** @class */ (function () {
                         contextExt = lodash_1.default.defaults(context, thisRunContext, this.extraContext);
                         contextExt.closureName = name;
                         contextExt.closureOptions = options;
+                        parameterKeys = Object.keys(contextExt.parameters || []);
+                        for (i = 0; i < parameterKeys.length; i++) {
+                            key = parameterKeys[i];
+                            if (key.charAt(0) === '^') {
+                                newKey = parameterKeys[i].substr(1);
+                                contextExt.parameters[newKey] = lodash_1.default.get(facts, contextExt.parameters[key]);
+                                delete contextExt.parameters[key];
+                            }
+                        }
                         if (!this.config.closureHandlerWrapper // closureHandlerWrapper exist
                         ) return [3 /*break*/, 2]; // closureHandlerWrapper exist
                         return [4 /*yield*/, this.config.closureHandlerWrapper(facts, contextExt, handler)]; // then call wrapper funtion
@@ -148,8 +156,10 @@ var RuleHarvester = /** @class */ (function () {
      **/
     RuleHarvester.prototype.setup = function () {
         try {
-            if (this.isSetup)
-                return;
+            this.providers = this.config.providers;
+            this.logger = this.config.providers.logger;
+            this.extraContext = this.config.extraContext;
+            this.ruleGroups = [];
             // Make sure extraContext is not using forbidden fields
             var badContext = lodash_1.default.intersection(lodash_1.default.keys(this.extraContext), this.forbidenExtraContext);
             if ((badContext || []).length > 0) {
@@ -181,7 +191,6 @@ var RuleHarvester = /** @class */ (function () {
                     rules: corpus.rules,
                 });
             }
-            this.isSetup = true;
         }
         catch (e) {
             if (this.logger) {
@@ -193,19 +202,20 @@ var RuleHarvester = /** @class */ (function () {
     /**
      * start the Rules Harvester.
      * Does this by...
-     * 1. Run setup input provider to initialize the rules enigne
      * 1. Does this by registering an input handler for each rule input
+     * 2. Run setup input provider to initialize the rules enigne
+     * NOTE: Setup is purposly run after registerInput because the input provider should be able to modify the corpus or configuration during setup
      * @params - None
      * @returns void
      **/
     RuleHarvester.prototype.start = function () {
-        this.setup();
         // We bind to the applyRule to this because otherwise the calling context would
         // be from the input provider insetad of the local class
         for (var _i = 0, _a = this.providers.inputs; _i < _a.length; _i++) {
             var ruleInput = _a[_i];
-            ruleInput.registerInput(this.applyRule.bind(this));
+            ruleInput.registerInput(this.applyRule.bind(this), this.config);
         }
+        this.setup();
     };
     /**
      * applyRule - Applies the rule to the rules engine

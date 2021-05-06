@@ -87,6 +87,40 @@ Alternatively the above rule definition could be simplified to...
 
 Though the above example is rather useless it can allow you to easily see the rule syntax 
 
+#### Closure Parameters
+
+In order to use closure parameters you need to use options when setting up a closure. In the following example `calculatePercentage` is a closure parameter. You will want to pass both `facts` and `context` into the closure arguments.
+
+```javascript
+[
+  {
+    name: 'setSalesTaxPercetage',
+    handler(facts, context) {
+      facts.setSalesTaxPercetage = context.parameters.calculatePercentage(facts, context);
+      return facts;
+    },
+    options: { required: ['calculatePercentage'], closureParameters: ['calculatePercentage'] },
+  }
+]
+```
+
+#### Path Parameters (^)
+
+Use `^` to specify that the parameter value should be treated as a path in the facts object. 
+
+In the following example, `percentages.digital` is a path contained in the facts object. The parameters gets to the function handler as `percentage` without the leading `^` character and the value of `percentage` will equal `facts.percentage.digital`. If `facts.percentage.digital = 0.1` then when the `saleTaxPercentage` closure is called it will have `context.parameters.percentage` value be `0.1`
+
+```javascript
+{ 
+    when: [{closure: "checkProductType", type: "digital"}],
+    then: [
+        {closure: "salesTaxPercetage" , "^percentage": 'percentages.digital' }
+        {closure: "calculateTaxes" , ^}
+        {closure: "calculateTotalPrice" }
+    ] 
+}
+```
+
 ### Rule Groups
 
 A rules group is simply an array of rules with a name attached. Keep in mind that rule groups act as reducers. Each step modifies the fact for the next rule to work on.

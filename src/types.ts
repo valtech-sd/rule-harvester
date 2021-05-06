@@ -24,10 +24,17 @@ export interface ICorpusRuleGroup {
   rules: ICorpusRule[];
 }
 
-export interface ICorpusRule {
-  when?: string | Object | Object[];
-  then?: string | Object | Object[];
+export interface IRuleObject {
+  closure: string;
+  [key: string]: any;
 }
+
+export interface IRuleBranch {
+  when?: ICorpusRule | ICorpusRule[];
+  then?: ICorpusRule | ICorpusRule[];
+}
+
+export type ICorpusRule = string | IRuleObject | IRuleBranch;
 
 // Interface for the rules corpus provider
 export interface ICorpusProvider {
@@ -39,6 +46,6 @@ export interface IClosure {
   name: string;
   // Function closure
   handler?(facts: any, context: any): any | Promise<any>;
-  rules?: Array<any>;
+  rules?: ICorpusRule[];
   options?: object;
 }
