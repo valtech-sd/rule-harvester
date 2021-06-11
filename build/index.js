@@ -88,8 +88,23 @@ var RuleHarvester = /** @class */ (function () {
                 switch (_b.label) {
                     case 0:
                         _b.trys.push([0, 5, , 6]);
-                        thisRunContext = factsAndOrRunContext === null || factsAndOrRunContext === void 0 ? void 0 : factsAndOrRunContext.thisRunContext;
-                        facts = factsAndOrRunContext === null || factsAndOrRunContext === void 0 ? void 0 : factsAndOrRunContext.facts;
+                        thisRunContext = factsAndOrRunContext === null || factsAndOrRunContext === void 0 ? void 0 : factsAndOrRunContext.thisRunContextSOMELONGRANDOMISHSTRING;
+                        facts = void 0;
+                        // This is to fix a bug for some edge cases where it gets to this wrapper from rules-js function.process(facts,context) calls
+                        if (thisRunContext ||
+                            factsAndOrRunContext.factsSOMELONGRANDOMISHSTRING) {
+                            facts = factsAndOrRunContext === null || factsAndOrRunContext === void 0 ? void 0 : factsAndOrRunContext.factsSOMELONGRANDOMISHSTRING;
+                            context.rulesFired.thisRunContextSOMELONGRANDOMISHSTRING =
+                                thisRunContext;
+                        }
+                        else {
+                            facts = factsAndOrRunContext;
+                        }
+                        if (!thisRunContext &&
+                            context.rulesFired.thisRunContextSOMELONGRANDOMISHSTRING) {
+                            thisRunContext =
+                                context.rulesFired.thisRunContextSOMELONGRANDOMISHSTRING;
+                        }
                         contextExt = lodash_1.default.defaults(context, thisRunContext, this.extraContext);
                         contextExt.closureName = name;
                         contextExt.closureOptions = options;
@@ -116,7 +131,10 @@ var RuleHarvester = /** @class */ (function () {
                         result = _a; // else call handler directly
                         if (result) {
                             // If !result then it actually needs to return what was specified
-                            result = { facts: result, thisRunContext: thisRunContext };
+                            result = {
+                                factsSOMELONGRANDOMISHSTRING: result,
+                                thisRunContextSOMELONGRANDOMISHSTRING: thisRunContext,
+                            };
                         }
                         return [3 /*break*/, 6];
                     case 5:
@@ -247,12 +265,12 @@ var RuleHarvester = /** @class */ (function () {
                         group = ruleGroups_1[_i];
                         factsAndContext = void 0;
                         return [4 /*yield*/, this.engine.process(group, {
-                                thisRunContext: thisRunContext,
-                                facts: fact,
+                                thisRunContextSOMELONGRANDOMISHSTRING: thisRunContext || {},
+                                factsSOMELONGRANDOMISHSTRING: fact,
                             })];
                     case 3:
                         (factsAndContext = (_c.sent()).fact);
-                        fact = factsAndContext === null || factsAndContext === void 0 ? void 0 : factsAndContext.facts; // If undefined facts then we still want to proceed
+                        fact = factsAndContext === null || factsAndContext === void 0 ? void 0 : factsAndContext.factsSOMELONGRANDOMISHSTRING; // If undefined facts then we still want to proceed
                         _c.label = 4;
                     case 4:
                         _i++;

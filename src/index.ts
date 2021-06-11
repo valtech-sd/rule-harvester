@@ -61,9 +61,28 @@ export default class RuleHarvester {
       let result: any;
       try {
         // Parse thisRunContext outof facts
-        let thisRunContext = factsAndOrRunContext?.thisRunContext;
-        let facts = factsAndOrRunContext?.facts;
+        let thisRunContext =
+          factsAndOrRunContext?.thisRunContextSOMELONGRANDOMISHSTRING;
+        let facts;
 
+        // This is to fix a bug for some edge cases where it gets to this wrapper from rules-js function.process(facts,context) calls
+        if (
+          thisRunContext ||
+          factsAndOrRunContext.factsSOMELONGRANDOMISHSTRING
+        ) {
+          facts = factsAndOrRunContext?.factsSOMELONGRANDOMISHSTRING;
+          context.rulesFired.thisRunContextSOMELONGRANDOMISHSTRING =
+            thisRunContext;
+        } else {
+          facts = factsAndOrRunContext;
+        }
+        if (
+          !thisRunContext &&
+          context.rulesFired.thisRunContextSOMELONGRANDOMISHSTRING
+        ) {
+          thisRunContext =
+            context.rulesFired.thisRunContextSOMELONGRANDOMISHSTRING;
+        }
         let contextExt = _.defaults(context, thisRunContext, this.extraContext);
         contextExt.closureName = name;
         contextExt.closureOptions = options;
@@ -87,7 +106,10 @@ export default class RuleHarvester {
 
         if (result) {
           // If !result then it actually needs to return what was specified
-          result = { facts: result, thisRunContext };
+          result = {
+            factsSOMELONGRANDOMISHSTRING: result,
+            thisRunContextSOMELONGRANDOMISHSTRING: thisRunContext,
+          };
         }
       } catch (e) {
         if (this.logger) {
@@ -248,10 +270,10 @@ export default class RuleHarvester {
           // and pass facts to the original handler and extend context with thisRunContext
           let factsAndContext: any;
           ({ fact: factsAndContext } = await this.engine.process(group, {
-            thisRunContext,
-            facts: fact,
+            thisRunContextSOMELONGRANDOMISHSTRING: thisRunContext || {},
+            factsSOMELONGRANDOMISHSTRING: fact,
           }));
-          fact = factsAndContext?.facts; // If undefined facts then we still want to proceed
+          fact = factsAndContext?.factsSOMELONGRANDOMISHSTRING; // If undefined facts then we still want to proceed
         }
       } catch (e) {
         error = e;
