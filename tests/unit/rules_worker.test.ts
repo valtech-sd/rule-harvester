@@ -73,13 +73,10 @@ describe('Rules Harvester', () => {
         ],
       },
     ];
-    let {
-      config,
-      rulesInputStub,
-      rulesOutputStub,
-    } = Utils.generateRulesHarvesterConfig({
-      corpus,
-    });
+    let { config, rulesInputStub, rulesOutputStub } =
+      Utils.generateRulesHarvesterConfig({
+        corpus,
+      });
     // Construct
     let rulesHarvester = new RulesHarvester(config);
 
@@ -127,16 +124,13 @@ describe('Rules Harvester', () => {
         ],
       },
     ];
-    let {
-      config,
-      rulesInputStub,
-      rulesOutputStub,
-    } = Utils.generateRulesHarvesterConfig({
-      corpus,
-      extraConfig: {
-        closureHandlerWrapper: closureHandlerWrapper,
-      },
-    });
+    let { config, rulesInputStub, rulesOutputStub } =
+      Utils.generateRulesHarvesterConfig({
+        corpus,
+        extraConfig: {
+          closureHandlerWrapper: closureHandlerWrapper,
+        },
+      });
     // Construct
     let rulesHarvester = new RulesHarvester(config);
 
@@ -205,16 +199,13 @@ describe('Rules Harvester', () => {
         ],
       },
     ];
-    let {
-      config,
-      rulesInputStub,
-      rulesOutputStub,
-    } = Utils.generateRulesHarvesterConfig({
-      corpus,
-      extraConfig: {
-        closureHandlerWrapper: closureHandlerWrapper,
-      },
-    });
+    let { config, rulesInputStub, rulesOutputStub } =
+      Utils.generateRulesHarvesterConfig({
+        corpus,
+        extraConfig: {
+          closureHandlerWrapper: closureHandlerWrapper,
+        },
+      });
     // Construct
     let rulesHarvester = new RulesHarvester(config);
 
@@ -276,14 +267,11 @@ describe('Rules Harvester', () => {
         ],
       },
     ];
-    let {
-      config,
-      rulesInputStub,
-      rulesOutputStub,
-    } = Utils.generateRulesHarvesterConfig({
-      corpus,
-      extraConfig: {},
-    });
+    let { config, rulesInputStub, rulesOutputStub } =
+      Utils.generateRulesHarvesterConfig({
+        corpus,
+        extraConfig: {},
+      });
     // Construct
     let rulesHarvester = new RulesHarvester(config);
 
@@ -337,23 +325,20 @@ describe('Rules Harvester', () => {
         ],
       },
     ];
-    let {
-      config,
-      rulesInputStub,
-      rulesOutputStub,
-    } = Utils.generateRulesHarvesterConfig({
-      corpus,
-      closures: [
-        ...Utils.closures,
-        {
-          name: 'always',
-          handler(_facts: any, _context: any) {
-            return true;
+    let { config, rulesInputStub, rulesOutputStub } =
+      Utils.generateRulesHarvesterConfig({
+        corpus,
+        closures: [
+          ...Utils.closures,
+          {
+            name: 'always',
+            handler(_facts: any, _context: any) {
+              return true;
+            },
           },
-        },
-      ],
-      extraConfig: {},
-    });
+        ],
+        extraConfig: {},
+      });
     // Construct
     let rulesHarvester = new RulesHarvester(config);
 
@@ -379,32 +364,57 @@ describe('Rules Harvester', () => {
       'Hat parmameter does not appear to have correctly been parsed'
     ).to.equal('goldrush');
   });
-  
+
   it('applyRule hat (^) Deep derefernces', async () => {
     let runTimeContext = { runTimeContextValue: 'SomRuntimeValue' };
     const corpus = [
       {
         name: 'TestHatPathsGroup',
         rules: [
-              { closure: 'extendFacts', '^result.single': 'event.single' },
-              { closure: 'extendFacts', '^result.array': ['nonderefval', '^event.array'] },
-              { closure: 'extendFacts', '^result.object': {'^objectKey': 'event.object', nonderefkey: 'nonderefval'} },
-              { closure: 'extendFacts', '^result.arrayobject': ['nonderefval', {'^arrayobjectKey': 'event.arrayobject', nonderefkey: 'nonderefval'}] },
-              { closure: 'extendFacts', '^result.objectarray': {'^objectarrayKey': ['nonderefval', {'^objectarrayKey': 'event.objectarray', nonderefkey: 'nonderefval'}], nonderefkey: 'nonderefval' }} ,
+          { closure: 'extendFacts', '^result.single': 'event.single' },
+          {
+            closure: 'extendFacts',
+            '^result.array': ['nonderefval', '^event.array'],
+          },
+          {
+            closure: 'extendFacts',
+            '^result.object': {
+              '^objectKey': 'event.object',
+              nonderefkey: 'nonderefval',
+            },
+          },
+          {
+            closure: 'extendFacts',
+            '^result.arrayobject': [
+              'nonderefval',
+              {
+                '^arrayobjectKey': 'event.arrayobject',
+                nonderefkey: 'nonderefval',
+              },
+            ],
+          },
+          {
+            closure: 'extendFacts',
+            '^result.objectarray': {
+              '^objectarrayKey': [
+                'nonderefval',
+                {
+                  '^objectarrayKey': 'event.objectarray',
+                  nonderefkey: 'nonderefval',
+                },
+              ],
+              nonderefkey: 'nonderefval',
+            },
+          },
         ],
       },
     ];
-    let {
-      config,
-      rulesInputStub,
-      rulesOutputStub,
-    } = Utils.generateRulesHarvesterConfig({
-      corpus,
-      closures: [
-        ...Utils.closures,
-      ],
-      extraConfig: {},
-    });
+    let { config, rulesInputStub, rulesOutputStub } =
+      Utils.generateRulesHarvesterConfig({
+        corpus,
+        closures: [...Utils.closures],
+        extraConfig: {},
+      });
     // Construct
     let rulesHarvester = new RulesHarvester(config);
 
@@ -419,7 +429,7 @@ describe('Rules Harvester', () => {
           single: 'singleval',
           array: 'arrayval',
           object: 'objectval',
-          arrayobject: {'arrayobjectval': 'arrayobjectval'},
+          arrayobject: { arrayobjectval: 'arrayobjectval' },
           objectarray: ['objectarrayval'],
         },
       },
@@ -429,11 +439,11 @@ describe('Rules Harvester', () => {
     expect(rulesOutputStub.outputResult.called, 'outputResult was not called')
       .to.be.true;
 
-              //{ closure: 'extendFacts', '^result.single': 'event.single' },
-              //{ closure: 'extendFacts', '^result.array': ['nonderefval', '^event.array'] },
-              //{ closure: 'extendFacts', '^result.object': {'^objectKey': 'event.object', nonderefkey: 'nonderefval'} },
-              //{ closure: 'extendFacts', '^result.arrayobject': ['nonderefval', {'^arrayobjectKey': 'event.arrayobject', nonderefkey: 'nonderefval'}] },
-              //{ closure: 'extendFacts', '^result.objectarray': {'^objectarrayKey': ['nonderefval', {'^objectarrayKey': 'event.arrayobject', nonderefkey: 'nonderefval'}] }, nonderefkey: 'nonderefval'} ,
+    //{ closure: 'extendFacts', '^result.single': 'event.single' },
+    //{ closure: 'extendFacts', '^result.array': ['nonderefval', '^event.array'] },
+    //{ closure: 'extendFacts', '^result.object': {'^objectKey': 'event.object', nonderefkey: 'nonderefval'} },
+    //{ closure: 'extendFacts', '^result.arrayobject': ['nonderefval', {'^arrayobjectKey': 'event.arrayobject', nonderefkey: 'nonderefval'}] },
+    //{ closure: 'extendFacts', '^result.objectarray': {'^objectarrayKey': ['nonderefval', {'^objectarrayKey': 'event.arrayobject', nonderefkey: 'nonderefval'}] }, nonderefkey: 'nonderefval'} ,
 
     // Should not call this for the specified ruleGroupOverrides
     expect(
@@ -442,12 +452,24 @@ describe('Rules Harvester', () => {
     ).to.deep.equal({
       single: 'singleval',
       array: ['nonderefval', 'arrayval'],
-      object: {objectKey: 'objectval', nonderefkey: 'nonderefval'},
-      arrayobject: ['nonderefval', {arrayobjectKey: {'arrayobjectval': 'arrayobjectval'}, nonderefkey: 'nonderefval'}],
-      objectarray: {objectarrayKey: ['nonderefval', {objectarrayKey: ['objectarrayval'], nonderefkey: 'nonderefval'}], nonderefkey: 'nonderefval'},
-    })
+      object: { objectKey: 'objectval', nonderefkey: 'nonderefval' },
+      arrayobject: [
+        'nonderefval',
+        {
+          arrayobjectKey: { arrayobjectval: 'arrayobjectval' },
+          nonderefkey: 'nonderefval',
+        },
+      ],
+      objectarray: {
+        objectarrayKey: [
+          'nonderefval',
+          { objectarrayKey: ['objectarrayval'], nonderefkey: 'nonderefval' },
+        ],
+        nonderefkey: 'nonderefval',
+      },
+    });
     //
-    
+
     // Call a second time with different values to ensure parameters are not permanently modified for future calls
     let result = await rulesInputStub.registerInput.lastCall.args[0](
       {
@@ -462,9 +484,11 @@ describe('Rules Harvester', () => {
       },
       runTimeContext
     );
-    expect(rulesOutputStub.outputResult.callCount, 'outputResult was not called on the second try')
-      .to.equal(2);
-    
+    expect(
+      rulesOutputStub.outputResult.callCount,
+      'outputResult was not called on the second try'
+    ).to.equal(2);
+
     // Should not call this for the specified ruleGroupOverrides
     expect(
       rulesOutputStub.outputResult.lastCall.args[0].facts.result,
@@ -472,33 +496,41 @@ describe('Rules Harvester', () => {
     ).to.deep.equal({
       single: 'singleval',
       array: ['nonderefval', 'arrayval'],
-      object: {objectKey: 'objectval', nonderefkey: 'nonderefval'},
-      arrayobject: ['nonderefval', {arrayobjectKey: 'arrayobjectval', nonderefkey: 'nonderefval'}],
-      objectarray: {objectarrayKey: ['nonderefval', {objectarrayKey: 'objectarrayval', nonderefkey: 'nonderefval'}], nonderefkey: 'nonderefval'},
-    })
+      object: { objectKey: 'objectval', nonderefkey: 'nonderefval' },
+      arrayobject: [
+        'nonderefval',
+        { arrayobjectKey: 'arrayobjectval', nonderefkey: 'nonderefval' },
+      ],
+      objectarray: {
+        objectarrayKey: [
+          'nonderefval',
+          { objectarrayKey: 'objectarrayval', nonderefkey: 'nonderefval' },
+        ],
+        nonderefkey: 'nonderefval',
+      },
+    });
   });
-  
+
   it('applyRule hat (^) Missing dereference', async () => {
     let runTimeContext = { runTimeContextValue: 'SomRuntimeValue' };
     const corpus = [
       {
         name: 'TestHatPathsGroup',
         rules: [
-              { closure: 'extendFacts', '^result.missing': 'event.missing', '^result.test': 'event.single' },
+          {
+            closure: 'extendFacts',
+            '^result.missing': 'event.missing',
+            '^result.test': 'event.single',
+          },
         ],
       },
     ];
-    let {
-      config,
-      rulesInputStub,
-      rulesOutputStub,
-    } = Utils.generateRulesHarvesterConfig({
-      corpus,
-      closures: [
-        ...Utils.closures,
-      ],
-      extraConfig: {},
-    });
+    let { config, rulesInputStub, rulesOutputStub } =
+      Utils.generateRulesHarvesterConfig({
+        corpus,
+        closures: [...Utils.closures],
+        extraConfig: {},
+      });
     // Construct
     let rulesHarvester = new RulesHarvester(config);
 
@@ -524,7 +556,7 @@ describe('Rules Harvester', () => {
       'No '
     ).to.deep.equal({
       missing: undefined,
-      test: 'singleval'
-    })
-  })
+      test: 'singleval',
+    });
+  });
 });
