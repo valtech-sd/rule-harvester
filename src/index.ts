@@ -25,6 +25,7 @@ export interface IRuleHarvesterConfig {
     context: any,
     handler: (facts: any, context: any) => any | Promise<any>
   ) => any | Promise<any>;
+  fieldDereferenceChar?: string;
 }
 
 export * from './types';
@@ -36,6 +37,7 @@ export default class RuleHarvester {
   config: IRuleHarvesterConfig;
   engine: any;
   logger?: Logger;
+  fieldDereferenceChar: string = '^';
   ruleGroups: string[];
   extraContext?: object | null;
   forbidenExtraContext: string[] = [
@@ -46,6 +48,59 @@ export default class RuleHarvester {
     'fact',
   ];
 
+  /*****************
+   * Derefrence parameters logic
+   ******************/
+  dereferenceString(facts: any, param: string) {
+    return _.get(facts, param);
+  }
+  dereferenceArray(facts: any, parameters: any[]) {
+    for (let i = 0; i < parameters.length; i++) {
+      const param = parameters[i];
+      if (_.isString(param) && param.charAt(0) === this.fieldDereferenceChar) {
+        const key = param.substr(1);
+        parameters[i] = this.dereferenceSingleValue(facts, key);
+      } else if (!_.isString(param)) {
+        parameters[i] = this.dereferenceSingleValue(facts, param);
+      }
+    }
+    return parameters;
+  }
+  dereferenceSingleValue(facts: any, originalValue: any) {
+    let newValue = originalValue;
+    if (_.isString(originalValue)) {
+      newValue = this.dereferenceString(facts, originalValue);
+    } else if (_.isArray(originalValue)) {
+      newValue = this.dereferenceArray(facts, originalValue);
+    } else if (_.isObject(originalValue)) {
+      newValue = this.dereferenceObject(facts, originalValue);
+    }
+    return newValue;
+  }
+
+  /**
+    * dereferenceObject
+    * Used to derefernce fields within an object. A field is dereferenced if the key begins with a "^"
+    * Call dereferenceSingleValue which does the following
+    * - If values are string then get path from facts object
+    * - If value is an object then call this recursively
+    * - If value is an array then call dereferenceArray
+    *   - dereferenceArray uses the leading character of the value to determine if something should be dereferenced or not
+    */
+  dereferenceObject(facts: any, parameters: any) {
+    let parameterKeys = Object.keys(parameters || {});
+    for (let i = 0; i < parameterKeys.length; i++) {
+      const key = parameterKeys[i];
+      if (key.charAt(0) === this.fieldDereferenceChar) {
+        const newKey = parameterKeys[i].substr(1);
+        const originalValue = parameters[key];
+        let newValue = this.dereferenceSingleValue(facts, originalValue);
+        parameters[newKey] = newValue;
+        delete parameters[key];
+      }
+    }
+    return parameters;
+  }
   /*****************
    * defaultClosureHandlerWrapper
    * This wraps the closure handler so that we log errors well
@@ -87,18 +142,19 @@ export default class RuleHarvester {
         contextExt.closureName = name;
         contextExt.closureOptions = options;
 
-        let parameterKeys = Object.keys(contextExt.parameters || []);
-        for (let i = 0; i < parameterKeys.length; i++) {
-          const key = parameterKeys[i];
-          if (key.charAt(0) === '^') {
-            const newKey = parameterKeys[i].substr(1);
-            contextExt.parameters[newKey] = _.get(
-              facts,
-              contextExt.parameters[key]
-            );
-            delete contextExt.parameters[key];
-          }
-        }
+        contextExt.parameters = this.dereferenceObject(facts, _.cloneDeep(contextExt.parameters));
+        // let parameterKeys = Object.keys(contextExt.parameters || {});
+        // for (let i = 0; i < parameterKeys.length; i++) {
+        //   const key = parameterKeys[i];
+        //   if (key.charAt(0) === this.fieldDereferenceChar) {
+        //     const newKey = parameterKeys[i].substr(1);
+        //     contextExt.parameters[newKey] = _.get(
+        //       facts,
+        //       contextExt.parameters[key]
+        //     );
+        //     delete contextExt.parameters[key];
+        //   }
+        // }
 
         result = this.config.closureHandlerWrapper // closureHandlerWrapper exist
           ? await this.config.closureHandlerWrapper(facts, contextExt, handler) // then call wrapper funtion
@@ -173,6 +229,7 @@ export default class RuleHarvester {
       this.logger = this.config.providers.logger;
       this.extraContext = this.config.extraContext;
       this.ruleGroups = [];
+      this.fieldDereferenceChar = this.config.fieldDereferenceChar || '^';
       // Make sure extraContext is not using forbidden fields
       let badContext = _.intersection(
         _.keys(this.extraContext),

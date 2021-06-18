@@ -96,9 +96,6 @@ describe('Rules Harvester', () => {
       { testContextThing: true }
     );
 
-    // This is to give the input handler time to run
-    await new Promise((resolve) => setTimeout(resolve, 100));
-
     expect(rulesOutputStub.outputResult.called, 'outputResult was not called')
       .to.be.true;
 
@@ -152,9 +149,6 @@ describe('Rules Harvester', () => {
         type: 'test',
       },
     });
-
-    // This is to give the input handler time to run
-    await new Promise((resolve) => setTimeout(resolve, 100));
 
     expect(rulesOutputStub.outputResult.called, 'outputResult was not called')
       .to.be.true;
@@ -237,9 +231,6 @@ describe('Rules Harvester', () => {
       runTimeContext
     );
 
-    // This is to give the input handler time to run
-    await new Promise((resolve) => setTimeout(resolve, 100));
-
     expect(rulesOutputStub.outputResult.called, 'outputResult was not called')
       .to.be.true;
 
@@ -310,9 +301,6 @@ describe('Rules Harvester', () => {
       ['SetSomething2Group']
     );
 
-    // This is to give the input handler time to run
-    await new Promise((resolve) => setTimeout(resolve, 100));
-
     expect(rulesOutputStub.outputResult.called, 'outputResult was not called')
       .to.be.true;
 
@@ -382,9 +370,6 @@ describe('Rules Harvester', () => {
       runTimeContext
     );
 
-    // This is to give the input handler time to run
-    await new Promise((resolve) => setTimeout(resolve, 100));
-
     expect(rulesOutputStub.outputResult.called, 'outputResult was not called')
       .to.be.true;
 
@@ -393,5 +378,103 @@ describe('Rules Harvester', () => {
       rulesOutputStub.outputResult.lastCall.args[0].facts.result?.eventType,
       'Hat parmameter does not appear to have correctly been parsed'
     ).to.equal('goldrush');
+  });
+  
+  it('applyRule hat (^) Deep derefernces', async () => {
+    let runTimeContext = { runTimeContextValue: 'SomRuntimeValue' };
+    const corpus = [
+      {
+        name: 'TestHatPathsGroup',
+        rules: [
+              { closure: 'extendFacts', '^result.single': 'event.single' },
+              { closure: 'extendFacts', '^result.array': ['nonderefval', '^event.array'] },
+              { closure: 'extendFacts', '^result.object': {'^objectKey': 'event.object', nonderefkey: 'nonderefval'} },
+              { closure: 'extendFacts', '^result.arrayobject': ['nonderefval', {'^arrayobjectKey': 'event.arrayobject', nonderefkey: 'nonderefval'}] },
+              { closure: 'extendFacts', '^result.objectarray': {'^objectarrayKey': ['nonderefval', {'^objectarrayKey': 'event.objectarray', nonderefkey: 'nonderefval'}], nonderefkey: 'nonderefval' }} ,
+        ],
+      },
+    ];
+    let {
+      config,
+      rulesInputStub,
+      rulesOutputStub,
+    } = Utils.generateRulesHarvesterConfig({
+      corpus,
+      closures: [
+        ...Utils.closures,
+      ],
+      extraConfig: {},
+    });
+    // Construct
+    let rulesHarvester = new RulesHarvester(config);
+
+    // Start - This registers the callback handler
+    rulesHarvester.start();
+
+    // Call the applyRule callback registered by the rules harvester that will end up applying rules
+    await rulesInputStub.registerInput.lastCall.args[0](
+      {
+        event: {
+          type: 'goldrush',
+          single: 'singleval',
+          array: 'arrayval',
+          object: 'objectval',
+          arrayobject: {'arrayobjectval': 'arrayobjectval'},
+          objectarray: ['objectarrayval'],
+        },
+      },
+      runTimeContext
+    );
+
+    expect(rulesOutputStub.outputResult.called, 'outputResult was not called')
+      .to.be.true;
+
+              //{ closure: 'extendFacts', '^result.single': 'event.single' },
+              //{ closure: 'extendFacts', '^result.array': ['nonderefval', '^event.array'] },
+              //{ closure: 'extendFacts', '^result.object': {'^objectKey': 'event.object', nonderefkey: 'nonderefval'} },
+              //{ closure: 'extendFacts', '^result.arrayobject': ['nonderefval', {'^arrayobjectKey': 'event.arrayobject', nonderefkey: 'nonderefval'}] },
+              //{ closure: 'extendFacts', '^result.objectarray': {'^objectarrayKey': ['nonderefval', {'^objectarrayKey': 'event.arrayobject', nonderefkey: 'nonderefval'}] }, nonderefkey: 'nonderefval'} ,
+
+    // Should not call this for the specified ruleGroupOverrides
+    expect(
+      rulesOutputStub.outputResult.lastCall.args[0].facts.result,
+      'Hat parameter does not appear to have correctly dereferenced values for the first call'
+    ).to.deep.equal({
+      single: 'singleval',
+      array: ['nonderefval', 'arrayval'],
+      object: {objectKey: 'objectval', nonderefkey: 'nonderefval'},
+      arrayobject: ['nonderefval', {arrayobjectKey: {'arrayobjectval': 'arrayobjectval'}, nonderefkey: 'nonderefval'}],
+      objectarray: {objectarrayKey: ['nonderefval', {objectarrayKey: ['objectarrayval'], nonderefkey: 'nonderefval'}], nonderefkey: 'nonderefval'},
+    })
+    //
+    
+    // Call a second time with different values to ensure parameters are not permanently modified for future calls
+    let result = await rulesInputStub.registerInput.lastCall.args[0](
+      {
+        event: {
+          type: 'goldrush',
+          single: 'singleval',
+          array: 'arrayval',
+          object: 'objectval',
+          arrayobject: 'arrayobjectval',
+          objectarray: 'objectarrayval',
+        },
+      },
+      runTimeContext
+    );
+    expect(rulesOutputStub.outputResult.callCount, 'outputResult was not called on the second try')
+      .to.equal(2);
+    
+    // Should not call this for the specified ruleGroupOverrides
+    expect(
+      rulesOutputStub.outputResult.lastCall.args[0].facts.result,
+      'Hat parameter does not appear to have correctly dereferenced values for the second call'
+    ).to.deep.equal({
+      single: 'singleval',
+      array: ['nonderefval', 'arrayval'],
+      object: {objectKey: 'objectval', nonderefkey: 'nonderefval'},
+      arrayobject: ['nonderefval', {arrayobjectKey: 'arrayobjectval', nonderefkey: 'nonderefval'}],
+      objectarray: {objectarrayKey: ['nonderefval', {objectarrayKey: 'objectarrayval', nonderefkey: 'nonderefval'}], nonderefkey: 'nonderefval'},
+    })
   });
 });
