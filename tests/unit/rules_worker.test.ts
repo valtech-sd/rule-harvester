@@ -477,4 +477,54 @@ describe('Rules Harvester', () => {
       objectarray: {objectarrayKey: ['nonderefval', {objectarrayKey: 'objectarrayval', nonderefkey: 'nonderefval'}], nonderefkey: 'nonderefval'},
     })
   });
+  
+  it('applyRule hat (^) Missing dereference', async () => {
+    let runTimeContext = { runTimeContextValue: 'SomRuntimeValue' };
+    const corpus = [
+      {
+        name: 'TestHatPathsGroup',
+        rules: [
+              { closure: 'extendFacts', '^result.missing': 'event.missing', '^result.test': 'event.single' },
+        ],
+      },
+    ];
+    let {
+      config,
+      rulesInputStub,
+      rulesOutputStub,
+    } = Utils.generateRulesHarvesterConfig({
+      corpus,
+      closures: [
+        ...Utils.closures,
+      ],
+      extraConfig: {},
+    });
+    // Construct
+    let rulesHarvester = new RulesHarvester(config);
+
+    // Start - This registers the callback handler
+    rulesHarvester.start();
+
+    // Call the applyRule callback registered by the rules harvester that will end up applying rules
+    await rulesInputStub.registerInput.lastCall.args[0](
+      {
+        event: {
+          type: 'goldrush',
+          single: 'singleval',
+        },
+      },
+      runTimeContext
+    );
+
+    expect(rulesOutputStub.outputResult.called, 'outputResult was not called')
+      .to.be.true;
+
+    expect(
+      rulesOutputStub.outputResult.lastCall.args[0].facts.result,
+      'No '
+    ).to.deep.equal({
+      missing: undefined,
+      test: 'singleval'
+    })
+  })
 });
