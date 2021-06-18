@@ -104,7 +104,7 @@ In order to use closure parameters you need to use options when setting up a clo
 ]
 ```
 
-#### Path Parameters (^)
+#### Path Parameters Dereferencing (^)
 
 Use `^` to specify that the parameter value should be treated as a path in the facts object. 
 
@@ -115,8 +115,32 @@ In the following example, `percentages.digital` is a path contained in the facts
     when: [{closure: "checkProductType", type: "digital"}],
     then: [
         {closure: "salesTaxPercetage" , "^percentage": 'percentages.digital' }
-        {closure: "calculateTaxes" , ^}
+        {closure: "calculateTaxes" }
         {closure: "calculateTotalPrice" }
+    ] 
+}
+```
+
+##### Deep Dereferencing With Objects
+
+The following is an example of deep dereferencing with an object. Notice how the top level salesArguments must have a hat (^) and the field key within that object must have the leading hat (^).
+
+```javascript
+{ 
+    when: [{closure: "checkProductType", type: "digital"}],
+    then: [
+        {closure: "salesTaxPercetage" ,"^salesArguments": { "^percentage": "percentage.digital" } }
+    ] 
+}
+```
+
+The following is an example of deep dereferencing with an array. In the following example "salesOneCalculation.value" would be dereferenced but 123 would not be. With arrays the value must have a leading hat (^) for the nested parameter to be dereferenced. Note also, the top level "values" field had to have a leading hat (^).
+
+```javascript
+{ 
+    when: [{closure: "checkProductType", type: "digital"}],
+    then: [
+        {closure: "sum" ,"^values": ["^salesOneCalculation.value", 123] }
     ] 
 }
 ```
