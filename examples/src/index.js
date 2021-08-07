@@ -1,26 +1,28 @@
 const { default: RulesHarvester } = require('rule-harvester');
-const RuleInputProviderFileWatcher = require('./providers/rule_input_file_watcher');
+const RuleInputProviderDirectoryWatcher = require('./providers/rule_input_directory_watcher');
 const RuleOutputProviderFile = require('./providers/rule_output_file');
-const ruleClosuresProvider = require('./providers/rule_closures_provider');
-const ruleCorpusesProvider = require('./providers/rule_corpuses_provider');
+const ruleClosures = require('./providers/rule_closures');
+const ruleCorpus = require('./providers/rule_corpus');
 const logger = require('./providers/custom-logger');
 
 /**
  * This is just a quick example of how to initialize and start the rules Harvester.
- * Basiclly we pass it various providers
- * Required providers include
- * - ruleInputs: Input providers - Calls a registerd functiuon when input comes in
- * - ruleOutputs: Output providers - A function from this provider is called after rules have been processed
- * - ruleCorpuses: This is the set of corpuses that is used to define what the rules engine does
- * - ruleClosures: This is a list of function definitions that the corpuses use to apply rules
+ * Basically we pass it various providers.
+ * Required providers include:
+ * - ruleInputs: Input providers - In this example, a single input provider that Calls a registered function when new
+ *   files are observed in a directory.
+ * - ruleOutputs: Output providers - In this example, a single output provider. This is called after rules have been
+ *   processed for a given input and just writes out an order file per valid order.
+ * - ruleCorpus: This is the set of corpuses that is used to define what rules are applied to the input.
+ * - ruleClosures: This is a list of function definitions available to the rules.
  */
 //
 let rulesHarvester = new RulesHarvester({
   providers: {
-    inputs: [new RuleInputProviderFileWatcher()],
+    inputs: [new RuleInputProviderDirectoryWatcher()],
     outputs: [new RuleOutputProviderFile()],
-    corpus: ruleCorpusesProvider,
-    closures: ruleClosuresProvider,
+    corpus: ruleCorpus,
+    closures: ruleClosures,
     logger: logger,
   },
 });

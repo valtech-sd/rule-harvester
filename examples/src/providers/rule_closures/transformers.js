@@ -23,15 +23,15 @@ module.exports = [
   },
   {
     /**
-     * setSalesTaxPercetage
+     * setSalesTaxPercentage
      * Set the sales tax percentage
      * @param - facts
      * @param - context
-     * @return - Set the salesTaxPercetage in the facts
+     * @return - Set the salesTaxPercentage in the facts
      **/
-    name: 'setSalesTaxPercetage',
+    name: 'setSalesTaxPercentage',
     handler(facts, context) {
-      facts.salesTaxPercetage = context.parameters.percentage;
+      facts.salesTaxPercentage = context.parameters.percentage;
       return facts;
     },
     options: { required: ['percentage'] },
@@ -41,12 +41,12 @@ module.exports = [
      * calculateTaxes
      * @param - facts
      * @param - context
-     * @return - Add taxes to facts
+     * @return - Facts, with added taxes
      **/
     name: 'calculateTaxes',
-    handler(facts) {
+    handler(facts, context) {
       // Calculate the taxes
-      facts.taxes = facts.price * ((facts.salesTaxPercetage || 0.0) / 100.0);
+      facts.taxes = facts.price * ((facts.salesTaxPercentage || 0.0) / 100.0);
       return facts;
     },
   },
@@ -55,12 +55,33 @@ module.exports = [
      * calculateTotalPrice
      * @param - facts
      * @param - context
-     * @return - Add total price to fact
+     * @return - Facts, with the new total price
      **/
     name: 'calculateTotalPrice',
-    handler(facts) {
+    handler(facts, context) {
       // Calculate the taxes
       facts.total = facts.taxes + facts.price;
+      return facts;
+    },
+  },
+  {
+    /**
+     * validateOrder
+     * example {closure: "validateOrder"} - If the order passes validation
+     * @param type
+     * @return boolean - true if the order passes validation
+     **/
+    name: 'validateOrder',
+    handler(facts, context) {
+      // Check that an order has all the required properties.
+      // Note, this is better done with JSON Schema but we're just doing a conditional here!
+      facts.orderIsValid =
+        facts.product &&
+        facts.shipping &&
+        facts.name &&
+        facts.email &&
+        facts.type &&
+        facts.price;
       return facts;
     },
   },

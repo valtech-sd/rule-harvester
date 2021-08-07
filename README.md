@@ -47,9 +47,9 @@ The following would just set a sale tax percentage value inside the facts object
 ```javascript
 [
   {
-    name: 'setSalesTaxPercetage',
+    name: 'setSalesTaxPercentage',
     handler(facts, context) {
-      facts.setSalesTaxPercetage = context.parameters.percentage
+      facts.setSalesTaxPercentage = context.parameters.percentage
       return facts;
     },
     options: { required: ['percentage'] },
@@ -94,9 +94,9 @@ In order to use closure parameters you need to use options when setting up a clo
 ```javascript
 [
   {
-    name: 'setSalesTaxPercetage',
+    name: 'setSalesTaxPercentage',
     handler(facts, context) {
-      facts.setSalesTaxPercetage = context.parameters.calculatePercentage(facts, context);
+      facts.setSalesTaxPercentage = context.parameters.calculatePercentage(facts, context);
       return facts;
     },
     options: { required: ['calculatePercentage'], closureParameters: ['calculatePercentage'] },
@@ -114,7 +114,7 @@ In the following example, `percentages.digital` is a path contained in the facts
 { 
     when: [{closure: "checkProductType", type: "digital"}],
     then: [
-        {closure: "salesTaxPercetage" , "^percentage": 'percentages.digital' }
+        {closure: "salesTaxPercentage" , "^percentage": 'percentages.digital' }
         {closure: "calculateTaxes" }
         {closure: "calculateTotalPrice" }
     ] 
@@ -129,7 +129,7 @@ The following is an example of deep dereferencing with an object. Notice how the
 { 
     when: [{closure: "checkProductType", type: "digital"}],
     then: [
-        {closure: "salesTaxPercetage" ,"^salesArguments": { "^percentage": "percentage.digital" } }
+        {closure: "salesTaxPercentage" ,"^salesArguments": { "^percentage": "percentage.digital" } }
     ] 
 }
 ```
@@ -173,7 +173,7 @@ A rules corpus is just an array of rule groups. This is what is passed into the 
         rules: [{ 
             when: [{closure: "checkProductType", type: "digital"}],
             then: [
-                { closure: "setSalesTaxPercetage", percentage: 0 }, 
+                { closure: "setSalesTaxPercentage", percentage: 0 }, 
             ], 
         }]
     },
@@ -217,12 +217,13 @@ ruleHarvester.start()
 
 The following is some snippets out of our example. This example will process any JSON files located in `./examples/input_watch_path`. It will load the JSON and pass it into the rule harvester. The rule harvester will calculate taxes and total price for the order then the output provider will output a txt file in `./examples/output_order_dispatch` that will show the order details.
 
-**Full Example**: Can be found in `./examples`
+> **Note:** The full example can be found in the `./examples` directory.
 
 To run the full example...
-1. Go to the example directory and run `npm run start`
-2. Go to the example directory and run `cp example_* input_watch_path/`
-3. You should see 3 output files in `./examples/output_order_dispatch` that show the output
+1. Go to the example directory and run `npm i` to install packages.
+1. Then with the dependencies installed, run `npm run start`.
+1. Go to the example directory and run `cp example_* input_watch_path/`.
+1. You should see several output files in `./examples/output_order_dispatch` that show the output of processing each order.
 
 ### Input Provider Example
 
@@ -243,7 +244,7 @@ module.exports = class RuleInputProviderFileWatcher {
     const handleEvent = async path => {
       // 2
       const inputStr = await readFile(path); 
-      const inputObj = JSON.parse(inputStr);
+      const inputObj = JSON.parse(inputStr.toString());
       inputObj.file = path;
       // 3
       await unlink(path);
@@ -253,21 +254,22 @@ module.exports = class RuleInputProviderFileWatcher {
 
     // 5
     chokidar
-      .watch(path.resolve(__dirname) + '/../../input_watch_path')
+      .watch(path.resolve(__dirname) + '/../../input_watch_path', {ignoreInitial: true})
       .on('add', handleEvent);
   }
 };
 ```
 
 Notes:
-1. registerInput is what makes this an input provider
-2. Read file, converts it to JSON object and add file path to json
-3. Delete the added file
-4. Pass json object from input to the rules harvester
+1. registerInput is what makes this an input provider.
+1. This provider is notified of added files in a directory, reads each file, converts the contents to a JSON object, 
+   and adds the file path to json for later use.
+1. Once it's done with the file, it deletes it.
+1. Finally the JSON object is passed to the rules harvester where it will become "facts" in the rules processing.
 
 ### Output Provider Example
 
-After corpus is run we have some resulting output. This output provider can do what it wills with those output.
+After the Rules Engine runs, we have some resulting output. This output provider is passed the output for handling.
 
 ```javascript
 const fs = require('fs');
@@ -295,50 +297,67 @@ module.exports = class RuleOutputProviderFile {
 
 Notes:
 1. outputResult is what makes this an output provider
-2. write the orderDispatch string to the ./output_order_dispatch directory.
-3. Just log the facts at rule completion
+1. write the orderDispatch string to the ./output_order_dispatch directory.
+1. Just log the facts at rule completion.
 
 ### Corpus Definitions Example
 
-This is the corpus definition. This is where we define what the rules engine actually does. More details can be found at [Rules.Js](https://github.com/bluealba/rules-js) on how rules are defined.
-Each closure must be defined in our closure array and the rule-harvester library will add that closure to the closure registry. In essence a closure is a function that the corpus definition acts on. Closures can be defined with function handlers or as an array of rules similar to how the corpus definitions are defined.
+This is the corpus definition. This is where we define what the rules engine actually does. More details can be found 
+at [Rules.Js](https://github.com/bluealba/rules-js) on how rules are defined. Each closure must be defined in our 
+closure array, and the rule-harvester library will add that closure to the closure registry. In essence a closure is a 
+function that the corpus definition acts on. Closures can be defined with function handlers or as an array of rules 
+similar to how the corpus definitions are defined.
 
 ```javascript
 module.exports = [
   {
+    name: 'mark-all-orders-invalid-in-prep-for-validation',
+    rules: [
+      {
+        when: 'always',
+        then: [{ closure: 'setOrderValidity', validOrder: false }],
+      },
+    ],
+  },
+  {
+    name: 'validate-incoming-order',
+    rules: [
+      {
+        when: [{ closure: 'orderPassesValidation'}],
+        then: [{ closure: 'setOrderValidity', validOrder: true }],
+      },
+    ],
+  },
+  {
     name: 'process-digital-item-orders',
     rules: [
-      // 1
       {
-        when: [{ closure: 'checkProductType', type: 'digital' }],
-        then: [
-          { closure: 'setSalesTaxPercetage', percentage: 0 }, 
+        when: [
+          { closure: 'checkProductType', type: 'digital' },
+          { closure: 'orderIsValid' },
         ],
+        then: [{ closure: 'setSalesTaxPercentage', percentage: 0 }],
       },
     ],
   },
   {
     name: 'process-other-normal-orders',
     rules: [
-      // 2
       {
         when: [
           { closure: 'checkNotProductType', type: 'digital' },
           { closure: 'checkShippingState', state: 'FL' },
+          { closure: 'orderIsValid' },
         ],
-        then: [
-          { closure: 'setSalesTaxPercetage', percentage: 6 }, 
-        ],
+        then: [{ closure: 'setSalesTaxPercentage', percentage: 6 }],
       },
-      // 3
       {
         when: [
           { closure: 'checkNotProductType', type: 'digital' },
           { closure: 'checkShippingState', state: 'CA' },
+          { closure: 'orderIsValid' },
         ],
-        then: [
-          { closure: 'setSalesTaxPercetage', percentage: 7.5 },
-        ],
+        then: [{ closure: 'setSalesTaxPercentage', percentage: 7.5 }],
       },
     ],
   },
@@ -346,8 +365,7 @@ module.exports = [
     name: 'send-order-bill',
     rules: [
       {
-        // 4
-        when: 'always', 
+        when: 'orderIsValid',
         then: [
           { closure: 'calculateTaxes' },
           { closure: 'calculateTotalPrice' },
@@ -356,34 +374,56 @@ module.exports = [
       },
     ],
   },
+  {
+    name: 'write-invalid-order-file',
+    rules: [
+      {
+        when: 'orderIsNotValid',
+        then: [
+          { closure: 'buildOrderDispatch_InvalidOrder' },
+        ],
+      },
+    ],
+  },
 ];
 ```
 
-Notes:
-1. When the item is a digital item then set sales tax to 0%
-2. When the item is not digital and the shipping state is FL set sales tax to 6%
-2. When the item is not digital and the shipping state is CA set sales tax to 7.5%
-4. Calculate taxes, total price and then build an order dispatch
+This Rule Set does the following with each of the inputs it receives:
+1. Marks the order as invalid (in preparation for a validation check).
+1. Calls a validation closure and marks the order as valid if that passes.
+1. For a valid order, when the item is a digital item then set sales tax to 0%.
+2. For a valid order, when the item is not digital, and the shipping state is FL set sales tax to 6%.
+1. For a valid order, when the item is not digital, and the shipping state is CA set sales tax to 7.5%.
+1. For a valid order, calculates taxes, total price and then builds an order dispatch.
+1. For an invalid order, builds an invalid order dispatch.
 
 ### Closure Definitions Example
 
-In order for the corpuses to work. We must have closure functions defined for every closure used in the corpus. Closure functions defined using a name, handler, and possibly some options. The handler function takes facts and context as the input and outputs the resulting facts. context can contain parameters that are passed into it. In addition a corpus can be defined with an array of rules similar to how the corpus definitions are defined. Just add a rules[] array field to the closure defition and remove the handler function.
+In order for the rules to work, we add closure functions that we reference in the corpus. Closure functions defined 
+using a name, handler, and possibly some options. The handler function takes facts and context as the input and outputs 
+the resulting facts. Context can contain parameters that are passed into it. In addition, a corpus can be defined with 
+an array of rules similar to how the corpus definitions are defined. Just add a rules[] array field to the closure 
+definition and remove the handler function.
 
-For example: setSalesTaxPercetage closure looks like the following. Word of caution. Whatever the handler returns becomes the new facts. By our convention the facts is intended to be changed and we extend the facts at each step. Each rule and each group should extend the facts. If null or undefined or some other junk data is inserted unintentionally then it could result the engine not working as intended
+For example: setSalesTaxPercentage closure looks like the following. Word of caution. Whatever the handler returns 
+becomes the new facts. By our convention, the facts are intended to be changed, and we extend the facts at each step. 
+Each rule and each group should extend the facts. If null or undefined or some other junk data is inserted 
+unintentionally then it could cause the engine not work as intended. For this reason, all closures should validate 
+data to be present before performing actions!
 
 ```javascript
 module.exports = [
   {
     /**
-     * setSalesTaxPercetage
+     * setSalesTaxPercentage
      * Set the sales tax percentage
      * @param - facts
      * @param - context
-     * @return - Set the salesTaxPercetage in the facts
+     * @return - Set the salesTaxPercentage in the facts
      **/
-    name: 'setSalesTaxPercetage',
+    name: 'setSalesTaxPercentage',
     handler(facts, context) {
-      facts.salesTaxPercetage = context.parameters.percentage;
+      facts.salesTaxPercentage = context.parameters.percentage;
       return facts;
     },
     options: { required: ['percentage'] },
@@ -392,9 +432,7 @@ module.exports = [
 ]
 ```
 
-**Full Example**: Can be found in `./examples`
-
-### Coniguration example
+### Configuration example
 
 The following is an example of how to configure the rule harvester
 
@@ -404,18 +442,16 @@ const { default: RuleHarvester } = require('rule-harvester');
 
 let ruleHarvester = new RuleHarvester({
   providers: {
-    inputs: [new RuleInputProviderFileWatcher()],
+    inputs: [new RuleInputProviderDirectoryWatcher()],
     outputs: [new RuleOutputProviderFile()],
-    corpus: ruleCorpusesProvider,
-    closures: ruleClosuresProvider,
+    corpus: ruleCorpus,
+    closures: ruleClosures,
     logger: logger,
   },
 });
 
 ruleHarvester.start();
 ```
-
-**Full Example**: Can be found in `./examples`
 
 ## License
 

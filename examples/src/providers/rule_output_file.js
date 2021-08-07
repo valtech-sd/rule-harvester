@@ -1,7 +1,7 @@
 const fs = require('fs');
 const { promisify } = require('util');
 const writeFile = promisify(fs.writeFile);
-var path = require('path');
+const path = require('path');
 
 module.exports = class RuleOutputProviderFile {
   // The rules Harvester will call the outputResult function after it is done processing input
