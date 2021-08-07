@@ -412,7 +412,7 @@ This Rule Set does the following with each of the inputs it receives:
    1. When the item is non-digital, introduces another nested rule to add sales tax by state.
       1. When the shipping state is FL, set sales tax to 6%.
       1. When shipping state is CA, set sales tax to 7.5%.
-   a. Still with a valid order, calculates taxes, total price and then builds an order dispatch.
+   1. Still with a valid order, calculates taxes, total price and then builds an order dispatch.
 1. Alternatively, processes an invalid order which builds an invalid order dispatch.
 
 ### Closure Definitions Example
