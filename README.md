@@ -261,15 +261,16 @@ module.exports = class RuleInputProviderFileWatcher {
 ```
 
 Notes:
-1. registerInput is what makes this an input provider.
-1. This provider is notified of added files in a directory, reads each file, converts the contents to a JSON object, 
-   and adds the file path to json for later use.
-1. Once it's done with the file, it deletes it.
-1. Finally the JSON object is passed to the rules harvester where it will become "facts" in the rules processing.
+1. You declare this class an input provider by implementing the `registerInput` method.
+1. The provider will be called when a file is added into the directory being watched. It then reads each file, 
+   converts the contents to a JSON object, and adds the file path to json for later use.
+1. Once the provider instance is done with the file, it deletes it.
+1. Finally, the provider passes the JSON object to the rules harvester where it will become "facts" in the rules 
+   processing chain.
 
 ### Output Provider Example
 
-After the Rules Engine runs, we have some resulting output. This output provider is passed the output for handling.
+After the Rules Engine runs, we have some resulting output which is handed to the output provider.
 
 ```javascript
 const fs = require('fs');
@@ -296,92 +297,108 @@ module.exports = class RuleOutputProviderFile {
 ```
 
 Notes:
-1. outputResult is what makes this an output provider
-1. write the orderDispatch string to the ./output_order_dispatch directory.
-1. Just log the facts at rule completion.
+1. You declare this class an output provider by implementing the `outputResult` method.
+1. This class simply writes the orderDispatch string from the `facts` to the ./output_order_dispatch directory as an
+   order file.
+1. In addition, the class also logs the facts as received to the console.
 
-### Corpus Definitions Example
+### Corpus Example
 
-This is the corpus definition. This is where we define what the rules engine actually does. More details can be found 
-at [Rules.Js](https://github.com/bluealba/rules-js) on how rules are defined. Each closure must be defined in our 
-closure array, and the rule-harvester library will add that closure to the closure registry. In essence a closure is a 
-function that the corpus definition acts on. Closures can be defined with function handlers or as an array of rules 
-similar to how the corpus definitions are defined.
+Below is a corpus example. This is where we define what the rules engine actually does with the input facts before 
+calling the output. 
+
+Since this library makes heavy use of Rules.js, you can read more details at [Rules.Js](https://github.com/bluealba/rules-js) 
+on how to define rules. 
+
+However, here is a primer. Each closure must be defined in our closure array, and the rule-harvester library will add 
+that closure to the closure registry. In essence a closure is a function that the corpus definition acts on. Closures 
+can be defined with function handlers or as an array of rules similar to how the corpus definitions are defined. Note 
+that rules can be nested and when doing so, you can achieve better performance by not repeating multiple conditions
+unnecessarily.
 
 ```javascript
 module.exports = [
+  // First validate the order
   {
-    name: 'mark-all-orders-invalid-in-prep-for-validation',
+    name: 'Validate the incoming order',
     rules: [
       {
         when: 'always',
-        then: [{ closure: 'setOrderValidity', validOrder: false }],
+        then: [{ closure: 'validateOrder' }],
       },
     ],
   },
+  // Now that we've validated, fire off some rules only for VALID ORDERS
   {
-    name: 'validate-incoming-order',
-    rules: [
-      {
-        when: [{ closure: 'orderPassesValidation'}],
-        then: [{ closure: 'setOrderValidity', validOrder: true }],
-      },
-    ],
-  },
-  {
-    name: 'process-digital-item-orders',
-    rules: [
-      {
-        when: [
-          { closure: 'checkProductType', type: 'digital' },
-          { closure: 'orderIsValid' },
-        ],
-        then: [{ closure: 'setSalesTaxPercentage', percentage: 0 }],
-      },
-    ],
-  },
-  {
-    name: 'process-other-normal-orders',
-    rules: [
-      {
-        when: [
-          { closure: 'checkNotProductType', type: 'digital' },
-          { closure: 'checkShippingState', state: 'FL' },
-          { closure: 'orderIsValid' },
-        ],
-        then: [{ closure: 'setSalesTaxPercentage', percentage: 6 }],
-      },
-      {
-        when: [
-          { closure: 'checkNotProductType', type: 'digital' },
-          { closure: 'checkShippingState', state: 'CA' },
-          { closure: 'orderIsValid' },
-        ],
-        then: [{ closure: 'setSalesTaxPercentage', percentage: 7.5 }],
-      },
-    ],
-  },
-  {
-    name: 'send-order-bill',
+    name: 'process valid orders',
     rules: [
       {
         when: 'orderIsValid',
         then: [
-          { closure: 'calculateTaxes' },
-          { closure: 'calculateTotalPrice' },
-          { closure: 'buildOrderDispatch' },
+          // Set the Sales Tax for Digital Orders first since those don't have per-state sales tax
+          {
+            name: 'process digital item orders',
+            rules: [
+              {
+                when: [{ closure: 'checkProductType', type: 'digital' }],
+                then: [{ closure: 'setSalesTaxPercentage', percentage: 0 }],
+              },
+            ],
+          },
+          // Next Set the Sales Tax for Non-Digital Orders where we do have to check the state
+          {
+            name: 'process non digital item orders',
+            rules: [
+              {
+                when: [{ closure: 'checkNotProductType', type: 'digital' }],
+                then: [
+                  // Set the Sales Tax according to the order's state
+                  {
+                    name: 'process by state',
+                    rules: [
+                      {
+                        when: [{ closure: 'checkShippingState', state: 'FL' }],
+                        then: [
+                          { closure: 'setSalesTaxPercentage', percentage: 6 },
+                        ],
+                      },
+                      {
+                        when: [{ closure: 'checkShippingState', state: 'CA' }],
+                        then: [
+                          { closure: 'setSalesTaxPercentage', percentage: 7.5 },
+                        ],
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+          // Now that we have Sales Tax set based on the above criteria, we can process the order finally!
+          {
+            name: 'Send the Order Bill',
+            rules: [
+              {
+                when: 'always',
+                then: [
+                  { closure: 'calculateTaxes' },
+                  { closure: 'calculateTotalPrice' },
+                  { closure: 'buildOrderDispatch' },
+                ],
+              },
+            ],
+          },
         ],
       },
     ],
   },
+  // And fire off some rules only for INVALID ORDERS
   {
-    name: 'write-invalid-order-file',
+    name: 'Process invalid Orders',
     rules: [
       {
         when: 'orderIsNotValid',
-        then: [
-          { closure: 'buildOrderDispatch_InvalidOrder' },
-        ],
+        then: [{ closure: 'buildOrderDispatch_InvalidOrder' }],
       },
     ],
   },
@@ -389,13 +406,14 @@ module.exports = [
 ```
 
 This Rule Set does the following with each of the inputs it receives:
-1. Marks the order as invalid (in preparation for a validation check).
-1. Calls a validation closure and marks the order as valid if that passes.
-1. For a valid order, when the item is a digital item then set sales tax to 0%.
-2. For a valid order, when the item is not digital, and the shipping state is FL set sales tax to 6%.
-1. For a valid order, when the item is not digital, and the shipping state is CA set sales tax to 7.5%.
-1. For a valid order, calculates taxes, total price and then builds an order dispatch.
-1. For an invalid order, builds an invalid order dispatch.
+1. Calls a validation closure and marks the order as valid or invalid depending on that closure's logic.
+1. Processes the order if it's valid (which has nested rules to do a bit more processing)
+   1. When the item is a digital item, sets the sales tax to 0%.
+   1. When the item is non-digital, introduces another nested rule to add sales tax by state.
+      1. When the shipping state is FL, set sales tax to 6%.
+      1. When shipping state is CA, set sales tax to 7.5%.
+   a. Still with a valid order, calculates taxes, total price and then builds an order dispatch.
+1. Alternatively, processes an invalid order which builds an invalid order dispatch.
 
 ### Closure Definitions Example
 
@@ -411,6 +429,8 @@ Each rule and each group should extend the facts. If null or undefined or some o
 unintentionally then it could cause the engine not work as intended. For this reason, all closures should validate 
 data to be present before performing actions!
 
+> **Note:** Any closure that changes `facts` must also return the changed `facts` object, otherwise, the modification will not be seen in the rules that follow!
+
 ```javascript
 module.exports = [
   {
@@ -424,7 +444,7 @@ module.exports = [
     name: 'setSalesTaxPercentage',
     handler(facts, context) {
       facts.salesTaxPercentage = context.parameters.percentage;
-      return facts;
+      return facts; // IMPORTANT TO RETURN THE CHANGED facts
     },
     options: { required: ['percentage'] },
   }

@@ -2,9 +2,9 @@
  * This is an example rule corpus that processes orders
  **/
 module.exports = [
-  // First mark the order as invalid since we've not yet
+  // First validate the order
   {
-    name: 'Mark the order as valid or invalid based on the closure',
+    name: 'Validate the incoming order',
     rules: [
       {
         when: 'always',
@@ -12,12 +12,14 @@ module.exports = [
       },
     ],
   },
+  // Now that we've validated, fire off some rules only for VALID ORDERS
   {
     name: 'process valid orders',
     rules: [
       {
         when: 'orderIsValid',
         then: [
+          // Set the Sales Tax for Digital Orders first since those don't have per-state sales tax
           {
             name: 'process digital item orders',
             rules: [
@@ -27,12 +29,14 @@ module.exports = [
               },
             ],
           },
+          // Next Set the Sales Tax for Non-Digital Orders where we do have to check the state
           {
             name: 'process non digital item orders',
             rules: [
               {
                 when: [{ closure: 'checkNotProductType', type: 'digital' }],
                 then: [
+                  // Set the Sales Tax according to the order's state
                   {
                     name: 'process by state',
                     rules: [
@@ -54,6 +58,7 @@ module.exports = [
               },
             ],
           },
+          // Now that we have Sales Tax set based on the above criteria, we can process the order finally!
           {
             name: 'Send the Order Bill',
             rules: [
@@ -71,6 +76,7 @@ module.exports = [
       },
     ],
   },
+  // And fire off some rules only for INVALID ORDERS
   {
     name: 'Process invalid Orders',
     rules: [
