@@ -8,41 +8,63 @@
 
 ## Overview
 
-Rule Harvester is a general purpose rules engine. It processes rule definitions and allows for a highly configurable rules engine with custom inputs and outpus. This package makes heavy use of [Rules.Js](https://github.com/bluealba/rules-js). We have a desire to use some specific patterns and as a result we have decided to build our own rule harvester based off of Rules.Js. 
+Rule Harvester is a general purpose rules engine. The Rules Engine receives an input and then processes rule definitions 
+against the input, changing that input along the way. Finally, the processed input is passed to an output.
+
+The rules engine comes with CORE INPUTS and OUTPUTS but also supports custom inputs and outputs. 
+
+This package makes heavy use of [Rules.Js](https://github.com/bluealba/rules-js). We have a desire to use some specific 
+patterns and as a result we have decided to build our own rule harvester based off of Rules.Js. 
 
 ## What is a Rules Engine?
 
-The most obvious thing is that this will allow you to do is run rules. It will allow you to use an event source (by way of the input provider) to input data into the same set of rules. Each rules will modify the input as it sees fit and in the end will provide a single output. During that process, it is possible to run any number of asynchronous or synchronous function calls.
+A Rules Engine allows you to run rules against a piece of data, altering that data as the rules go. It allows you to use 
+an event source (by way of the input provider) to input data into the same set of rules. Each rules will modify the input 
+as it sees fit and in the end will provide a single output. During that process, it is possible to run any number of 
+asynchronous or synchronous function calls.
 
 ## Features
-- Chainable Rules where each rules modifies the input for another rule to make use of
-- Define rules using JSON
-- Add any number of closures (functions) to the rules engine for use
-- Use any number of custom javascript functions within your conditions or actions.
-- Simple syntax with lots of flexibility
-- Nested conditions
+
+- Support for chainable Rules where each rule modifies the input, then subsequent rules received the modified input.
+- Rules defined using JSON.
+- Support for closures (functions) as part of the rules engine.
+- Support for custom javascript functions within your conditions or actions.
+- Simple syntax with lots of flexibility.
+- Nested conditions.
 
 ## Terms/Syntax
 
-There is a need to define terms and syntax
+Lets begin by definig certain terms.
 
-### Facts
+### Facts (input)
 
-Facts are the terminology we use to refer to the data that the rules engine currently holds. When a blob of data is first passed to the rule harvester, that input is the start of those facts. This can just be a string but in most cases facts will be a JSON object of some sort. Each rule will then act on a fact and modify it in whatever way is needed. 
+The data coming from an input to the Rules Engine are called **Facts**. When a blob of data is passed to the Rule Harvester, that input is the 
+start state of the facts. An fact can just be a string but in most cases facts will be a JSON object of some sort. 
+Each rule will then act on a fact and modify it as needed. 
 
-### Input providers
+### Inputs
 
-Input providers are what send input into the rule harvester. That input becomes the start of the facts that will be processed while running the rules. An input provider must contain the function `registerInput(applyInputCb)` where applyInputCb is passed in from the ruleHarvester to the input provider and is called by the input provider to run facts against your rules. applyInputCb can take facts and a runtime context as arguments. runtimeContext extends the context when calling closures. If the runtimeContext contains `{testValue: 1}` then the context that is passed into a closure will contain `context.testvalue = 1`. This is useful for passing something like a specialty logger that needs to log some sort of run specific context.
+Inputs are what send data into the Rule Harvester. The data brought in by the input becomes the start of the facts that 
+will be processed while running through the rules. An input provider must contain the function `registerInput(applyInputCb)` 
+where `applyInputCb` is passed in from the ruleHarvester to the input provider and is called by the input provider to run 
+facts against your rules. `applyInputCb` can take facts and a runtime context as arguments. `runtimeContext` extends the 
+context when calling closures. If the `runtimeContext` contains `{testValue: 1}` then the context that is passed into a 
+closure will contain `context.testvalue = 1`. This is useful for passing something like a specialty logger that needs to 
+log some sort of run specific context.
 
-### Output providers
+### Outputs
 
-Output providers receive the final output from the input provider. In some cases it may write a file based on the output facts. In other cases, it may do an http REST call of some sort. An output provider must contain the function `outputResult({ facts, error, errorGroup })` where facts is the output fact.
+Outputs receive the final modified facts from the Rules Engine. In some cases it may write a file based on the output 
+facts. In other cases, it may do an http REST call of some sort. An output provider must contain the 
+function `outputResult({ facts, error, errorGroup })` where facts are the output modified facts after all rules
+have been processed.
 
 ### Closures
 
-Closures are functions that can be called from within a rule. All closures need to be defined by the calling system. Those closures will then be passed into the rule harvester during initialization.
+Closures are functions that can be called from within a rule. All closures need to be defined by the calling system. 
+Those closures will then be passed into the rule harvester during initialization.
 
-The following would just set a sale tax percentage value inside the facts object.
+The following is an example closure that sets a sale tax percentage value inside the facts object.
 
 ```javascript
 [
@@ -84,12 +106,31 @@ Alternatively the above rule definition could be simplified to...
     ]
 }
 ```
+ 
+The above rule would perform a certain action on facts when a certain closure `checkProductType` determines that a
+product type is "digital". In this case, the actions would be `calculateTaxes` and `calculateTotalPrice`. All of the 
+three items `checkProductType`, `calculateTaxes`, and `calculateTotalPrice` are closures that you get to define.
 
-Though the above example is rather useless it can allow you to easily see the rule syntax 
+#### Closures as conditions
+
+When you use a closure in the "when:" clause of a rule, we can say that the closure is a "condition". The output of
+closures used in "when:" clauses of rules should be `true` or `false`.
+
+#### Closures as actions
+
+When you use a closure in the "then:" clause of a rule, we can say that the closure is an "action". The output of
+closures used in "then:" clauses of rules should be the CHANGED FACTS, which are then passed further downstream to 
+other rules. 
+
+An action should change the `facts` object as needed, then return the `facts` object.
 
 #### Closure Parameters
 
-In order to use closure parameters you need to use options when setting up a closure. In the following example `calculatePercentage` is a closure parameter. You will want to pass both `facts` and `context` into the closure arguments.
+A closure can support Parameters. Similar to how JavaScript functions can receive arguments, these are properties are
+passed into the function that implements the closure.
+
+In order to use closure parameters you need to use options when setting up a closure. In the following example 
+`calculatePercentage` is a closure parameter. You will want to pass both `facts` and `context` into the closure arguments.
 
 ```javascript
 [
@@ -108,7 +149,10 @@ In order to use closure parameters you need to use options when setting up a clo
 
 Use `^` to specify that the parameter value should be treated as a path in the facts object. 
 
-In the following example, `percentages.digital` is a path contained in the facts object. The parameters gets to the function handler as `percentage` without the leading `^` character and the value of `percentage` will equal `facts.percentage.digital`. If `facts.percentage.digital = 0.1` then when the `saleTaxPercentage` closure is called it will have `context.parameters.percentage` value be `0.1`
+In the following example, `percentages.digital` is a path contained in the facts object. The parameters gets to the 
+function handler as `percentage` without the leading `^` character and the value of `percentage` will equal 
+`facts.percentage.digital`. If `facts.percentage.digital = 0.1` then when the `saleTaxPercentage` closure is called it 
+will have `context.parameters.percentage` value be `0.1`.
 
 ```javascript
 { 
@@ -123,7 +167,8 @@ In the following example, `percentages.digital` is a path contained in the facts
 
 ##### Deep Dereferencing With Objects
 
-The following is an example of deep dereferencing with an object. Notice how the top level salesArguments must have a hat (^) and the field key within that object must have the leading hat (^).
+The following is an example of deep dereferencing with an object. Notice how the top level salesArguments must have a 
+hat (^) and the field key within that object must have the leading hat (^).
 
 ```javascript
 { 
@@ -147,7 +192,8 @@ The following is an example of deep dereferencing with an array. In the followin
 
 ### Rule Groups
 
-A rules group is simply an array of rules with a name attached. Keep in mind that rule groups act as reducers. Each step modifies the fact for the next rule to work on.
+A Rule Group is simply an array of rules with a name attached. Keep in mind that rule groups act as reducers. Each 
+step modifies the fact for the next rule to work on.
 
 ```javascript
 {
@@ -164,7 +210,8 @@ A rules group is simply an array of rules with a name attached. Keep in mind tha
 
 ### Rules Corpus
 
-A rules corpus is just an array of rule groups. This is what is passed into the rule harvester during initialization. The following is a small example of a rules corpus.
+The Rule Corpus is an array of rule groups. This is what is passed into the rule harvester during initialization. The 
+following is a small example of a Rule Corpus.
 
 ```javascript
 [ 
@@ -215,11 +262,14 @@ ruleHarvester.start()
 
 ## Example
 
-The following is some snippets out of our example. This example will process any JSON files located in `./examples/input_watch_path`. It will load the JSON and pass it into the rule harvester. The rule harvester will calculate taxes and total price for the order then the output provider will output a txt file in `./examples/output_order_dispatch` that will show the order details.
+The following example processes any JSON files dropped into `./examples/input_watch_path`. It will load the JSON form 
+each file and pass it into the Rule Harvester. The Rule Harvester will calculate taxes and total price for the order 
+then pass the modified facts to the output provider. The output provider then will output a txt file in `./examples/output_order_dispatch` 
+that will show the order details.
 
 > **Note:** The full example can be found in the `./examples` directory.
 
-To run the full example...
+To run the full example:
 1. Go to the example directory and run `npm i` to install packages.
 1. Then with the dependencies installed, run `npm run start`.
 1. Go to the example directory and run `cp example_* input_watch_path/`.
@@ -227,7 +277,8 @@ To run the full example...
 
 ### Input Provider Example
 
-The following example watches `./examples/input_watch_path` for new files. It then passes the file to the rule harvester and deletes the original file.
+The following example watches `./examples/input_watch_path` for new files. It then passes the file to the Rule Harvester
+and deletes the original file.
 
 ```javascript
 const chokidar = require('chokidar');
@@ -423,13 +474,14 @@ the resulting facts. Context can contain parameters that are passed into it. In 
 an array of rules similar to how the corpus definitions are defined. Just add a rules[] array field to the closure 
 definition and remove the handler function.
 
-For example: setSalesTaxPercentage closure looks like the following. Word of caution. Whatever the handler returns 
+For example: `setSalesTaxPercentage` closure looks like the following. Word of caution. Whatever the handler returns 
 becomes the new facts. By our convention, the facts are intended to be changed, and we extend the facts at each step. 
 Each rule and each group should extend the facts. If null or undefined or some other junk data is inserted 
 unintentionally then it could cause the engine not work as intended. For this reason, all closures should validate 
 data to be present before performing actions!
 
-> **Note:** Any closure that changes `facts` must also return the changed `facts` object, otherwise, the modification will not be seen in the rules that follow!
+> **Note:** Any closure that changes `facts` must also return the changed `facts` object, otherwise, the modification 
+> will not be seen in the rules that follow!
 
 ```javascript
 module.exports = [
