@@ -404,9 +404,6 @@ that rules can be nested and when doing so, you can achieve better performance b
 unnecessarily.
 
 ```javascript
-/**
- * This is an example rule corpus that processes orders
- **/
 module.exports = [
    // First validate the order
    {
