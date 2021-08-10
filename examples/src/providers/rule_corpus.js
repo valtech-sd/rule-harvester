@@ -25,7 +25,9 @@ module.exports = [
             rules: [
               {
                 when: [{ closure: 'checkProductType', type: 'digital' }],
-                then: [{ closure: 'setSalesTaxPercentage', percentage: 0 }],
+                then: [
+                  { closure: 'setSalesTaxPercentageFixed', percentage: 0 },
+                ],
               },
             ],
           },
@@ -43,13 +45,19 @@ module.exports = [
                       {
                         when: [{ closure: 'checkShippingState', state: 'FL' }],
                         then: [
-                          { closure: 'setSalesTaxPercentage', percentage: 6 },
+                          {
+                            closure: 'setSalesTaxPercentage',
+                            percentClosureName: 'getSalesTaxPercentageFl',
+                          },
                         ],
                       },
                       {
                         when: [{ closure: 'checkShippingState', state: 'CA' }],
                         then: [
-                          { closure: 'setSalesTaxPercentage', percentage: 7.5 },
+                          {
+                            closure: 'setSalesTaxPercentage',
+                            percentClosureName: 'getSalesTaxPercentageCa',
+                          },
                         ],
                       },
                     ],

@@ -87,54 +87,144 @@ Alternatively the above rule definition could be simplified to...
 
 Though the above example is rather useless it can allow you to easily see the rule syntax 
 
-#### Closure Parameters
+#### Closure as a Parameter to another Closure
 
+<<<<<<< Updated upstream
 In order to use closure parameters you need to use options when setting up a closure. In the following example `calculatePercentage` is a closure parameter. You will want to pass both `facts` and `context` into the closure arguments.
+=======
+A closure can support being passed the name of another closure as a Parameter. This is similar to how JavaScript functions can 
+receive functions as arguments.
+
+In order to pass a closure as a parameter you need to use **options** when setting up the main closure. For example:
+>>>>>>> Stashed changes
 
 ```javascript
 [
-  {
-    name: 'setSalesTaxPercentage',
-    handler(facts, context) {
-      facts.setSalesTaxPercentage = context.parameters.calculatePercentage(facts, context);
-      return facts;
-    },
-    options: { required: ['calculatePercentage'], closureParameters: ['calculatePercentage'] },
-  }
+   {
+      /**
+       * setSalesTaxPercentage
+       * Set the sales tax percentage, by calling ANOTHER closure, whose name is passed in as a parameter
+       * to this closure! The passed in closure must be defined, of course!
+       * @param - facts
+       * @param - context
+       * @return - Set the salesTaxPercentage in the facts
+       **/
+      name: 'setSalesTaxPercentage', // 1
+      // 2
+      options: {
+         closureParameters: ['percentClosureName'],
+      },
+      handler(facts, context) {
+         // 3
+         facts.salesTaxPercentage = context.parameters.percentClosureName.process(
+             facts,
+             context
+         );
+         return facts;
+      },
+   },
+   {
+      /**
+       * getSalesTaxPercentageFl
+       * Get the sales tax percentage for Florida
+       * @param - facts
+       * @param - context
+       * @return - The salesTaxPercentage for Florida
+       **/
+      name: 'getSalesTaxPercentageFl', // 4
+      handler(facts, context) {
+         return 6.0;
+      },
+   },
+   {
+      /**
+       * getSalesTaxPercentageCa
+       * Get the sales tax percentage for California
+       * @param - facts
+       * @param - context
+       * @return - The salesTaxPercentage for California
+       **/
+      name: 'getSalesTaxPercentageCa', // 5
+      handler(facts, context) {
+         return 7.5;
+      },
+   },
 ]
 ```
 
-#### Path Parameters Dereferencing (^)
+In the above example:
+1. setSalesTaxPercentage is our main closure for setting the Sales Tax percent. We are going to set it by calling
+   another closure for each state.
+1. Notice how in this main closure, you set `options` so that the engine recognizes the parameter `percentClosureName` 
+   as a closure and loads it at runtime.
+1. Also note how we have to use a special syntax to "call" the closure. We use the `.process(facts, contaxt)` method to
+   call the underlying closure.
+1. Now we declare our state specific closure for Florida. Note how it just returns a number!
+1. Similarly, we delcare our state specific closure for California. It too just returns a number!
 
-Use `^` to specify that the parameter value should be treated as a path in the facts object. 
+#### Path Parameters De-referencing (^)
 
+<<<<<<< Updated upstream
 In the following example, `percentages.digital` is a path contained in the facts object. The parameters gets to the function handler as `percentage` without the leading `^` character and the value of `percentage` will equal `facts.percentage.digital`. If `facts.percentage.digital = 0.1` then when the `saleTaxPercentage` closure is called it will have `context.parameters.percentage` value be `0.1`
+=======
+Until this point, you've passed static values, like strings and numbers, to closures as parameters. What if you
+want to reference a Fact property for a comparison? This is where de-referencing comes in!
+
+You can use the caret character (`^`) to start a property name to specify that the parameter value should be treated as 
+a path in the facts object. 
+
+Let's start from this fact:
+```json
+{
+    "product": "AwesomeEbookOfSomeSort",
+    "shipping": {
+        "street": "123 sweet st.",
+        "city": "San Diego",
+        "state": "CA",
+        "zip": "12345"
+    },
+    "name": "Fred Jones",
+    "email": "fred@testsite.com",
+    "type": "digital",
+    "price": 240.00
+}
+```
+
+If you wanted to run a rule if `type` === "digital", you would represent it as follows:
+>>>>>>> Stashed changes
 
 ```javascript
 { 
-    when: [{closure: "checkProductType", type: "digital"}],
+    when: [{closure: "equal", value2: "^type", value2: "digital"}],
     then: [
-        {closure: "salesTaxPercentage" , "^percentage": 'percentages.digital' }
-        {closure: "calculateTaxes" }
-        {closure: "calculateTotalPrice" }
+       //... include other rules here ...
     ] 
 }
 ```
 
-##### Deep Dereferencing With Objects
+In the above, the `equal` closure will be called and passed the **value** of your Facts object for the property `type` 
+and the string "digital". The `equal` closure, as the name implies, returns true/false based on the equality of
+the two passed values.
 
+##### Deep De-referencing With Objects
+
+<<<<<<< Updated upstream
 The following is an example of deep dereferencing with an object. Notice how the top level salesArguments must have a hat (^) and the field key within that object must have the leading hat (^).
+=======
+The following is an example of deep de-referencing with an object. Notice how the top level salesArguments must have a 
+hat (^) and the field key within that object must have the leading hat (^).
+>>>>>>> Stashed changes
 
 ```javascript
 { 
     when: [{closure: "checkProductType", type: "digital"}],
     then: [
-        {closure: "salesTaxPercentage" ,"^salesArguments": { "^percentage": "percentage.digital" } }
+        {closure: "salesTaxPercentage", "^salesArguments": { "^percentage" : "percentage.digital" } }
     ] 
 }
 ```
 
-The following is an example of deep dereferencing with an array. In the following example "salesOneCalculation.value" would be dereferenced but 123 would not be. With arrays the value must have a leading hat (^) for the nested parameter to be dereferenced. Note also, the top level "values" field had to have a leading hat (^).
+The following is an example of deep de-referencing with an array. In the following example "salesOneCalculation.value" would be dereferenced but 123 would not be. With arrays the value must have a leading hat (^) for the nested parameter to be dereferenced. Note also, the top level "values" field had to have a leading hat (^).
 
 ```javascript
 { 
