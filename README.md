@@ -599,8 +599,8 @@ await applyInputCb(inputObj, context); // 2
 ```
 
 Note:
-1. We create a context variable to hold a context object of our choice. This can be anything we want it to be. An object
-   is most useful, but it could theoretically be a primitive!
+1. We create a context variable to hold a context object of our choice. This must be an object although it can take any 
+   form of your choice! (See below for a few property names that are not allowed.)
 1. We then pass that context into the method `applyInputCb()` along with our `inputObj` (which becomes our `facts` into
    the rules engine) and the `context` we just created.
    
@@ -626,6 +626,17 @@ Similarly, context is passed into Outputs as well. For example:
     // Note facts, context and other items are exposed here as well! 
   }
 ```
+
+**Context property names that are not allowed in Context**
+
+The following properties are not allowed in the root of a context object since they are used already by Rule-Harvester
+for other functionality:
+
+- engine
+- parameters
+- rulesFired
+- currentRuleFlowActivated
+- fact
 
 ### ruleGroupOverrides
 
