@@ -15,12 +15,16 @@ Rule Harvester is a general purpose rules engine. It processes rule definitions 
 The most obvious thing is that this will allow you to do is run rules. It will allow you to use an event source (by way of the input provider) to input data into the same set of rules. Each rules will modify the input as it sees fit and in the end will provide a single output. During that process, it is possible to run any number of asynchronous or synchronous function calls.
 
 ## Features
-- Chainable Rules where each rules modifies the input for another rule to make use of
-- Define rules using JSON
-- Add any number of closures (functions) to the rules engine for use
+- Chainable Rules where each rule modifies the input for another rule to make use of.
+- Define rules using JSON.
+- Add any number of closures (functions) to the rules engine.
 - Use any number of custom javascript functions within your conditions or actions.
-- Simple syntax with lots of flexibility
-- Nested conditions
+- Simple syntax with lots of flexibility.
+- Nested conditions.
+
+## TL:DR;
+
+Jump straight to our [example](#Example) to get started right away!
 
 ## Terms/Syntax
 
@@ -89,14 +93,10 @@ Though the above example is rather useless it can allow you to easily see the ru
 
 #### Closure as a Parameter to another Closure
 
-<<<<<<< Updated upstream
-In order to use closure parameters you need to use options when setting up a closure. In the following example `calculatePercentage` is a closure parameter. You will want to pass both `facts` and `context` into the closure arguments.
-=======
 A closure can support being passed the name of another closure as a Parameter. This is similar to how JavaScript functions can 
 receive functions as arguments.
 
 In order to pass a closure as a parameter you need to use **options** when setting up the main closure. For example:
->>>>>>> Stashed changes
 
 ```javascript
 [
@@ -152,28 +152,27 @@ In order to pass a closure as a parameter you need to use **options** when setti
 ]
 ```
 
-In the above example:
-1. setSalesTaxPercentage is our main closure for setting the Sales Tax percent. We are going to set it by calling
+In the above example: (Match the numbers below in the code above)
+1. **setSalesTaxPercentage** is our main closure for setting the Sales Tax percent. We are going to set it by calling
    another closure for each state.
 1. Notice how in this main closure, you set `options` so that the engine recognizes the parameter `percentClosureName` 
    as a closure and loads it at runtime.
-1. Also note how we have to use a special syntax to "call" the closure. We use the `.process(facts, contaxt)` method to
-   call the underlying closure.
-1. Now we declare our state specific closure for Florida. Note how it just returns a number!
-1. Similarly, we delcare our state specific closure for California. It too just returns a number!
+1. Also note how you have to use a special syntax to "call" the parameter closure. We use the method `.process(facts, contaxt)` to
+   call the underlying closure and fetch results.
+1. In this section we declare our state specific closure for Florida. Note how it just returns a primitive in our case, 
+   specifically the Sales Tax rate as a number!
+1. Similarly, we declare our state specific closure for California. Similar to the Florida closure, this too just returns
+   a number!
 
 #### Path Parameters De-referencing (^)
 
-<<<<<<< Updated upstream
-In the following example, `percentages.digital` is a path contained in the facts object. The parameters gets to the function handler as `percentage` without the leading `^` character and the value of `percentage` will equal `facts.percentage.digital`. If `facts.percentage.digital = 0.1` then when the `saleTaxPercentage` closure is called it will have `context.parameters.percentage` value be `0.1`
-=======
 Until this point, you've passed static values, like strings and numbers, to closures as parameters. What if you
-want to reference a Fact property for a comparison? This is where de-referencing comes in!
+want to reference a fact property for a comparison? This is where de-referencing comes in!
 
-You can use the caret character (`^`) to start a property name to specify that the parameter value should be treated as 
-a path in the facts object. 
+You can use the caret character (`^`), sometimes called a "hat" to start a property name to specify that the parameter
+value should be treated as a path in the facts object instead of a static value. 
 
-Let's start from this fact:
+To illustrate this, let's start from this fact:
 ```json
 {
     "product": "AwesomeEbookOfSomeSort",
@@ -191,29 +190,24 @@ Let's start from this fact:
 ```
 
 If you wanted to run a rule if `type` === "digital", you would represent it as follows:
->>>>>>> Stashed changes
 
 ```javascript
 { 
-    when: [{closure: "equal", value2: "^type", value2: "digital"}],
+    when: [{closure: "equal", value1: "^type", value2: "digital"}],
     then: [
        //... include other rules here ...
     ] 
 }
 ```
 
-In the above, the `equal` closure will be called and passed the **value** of your Facts object for the property `type` 
-and the string "digital". The `equal` closure, as the name implies, returns true/false based on the equality of
-the two passed values.
+In the above, the `equal` closure (not included in the example, just presented here for illustration purposes) will 
+be called and passed the **value** of your Facts object for the property `type` and the string "digital". The `equal` 
+closure, as the name implies, returns true/false based on the equality of the two passed values.
 
 ##### Deep De-referencing With Objects
 
-<<<<<<< Updated upstream
-The following is an example of deep dereferencing with an object. Notice how the top level salesArguments must have a hat (^) and the field key within that object must have the leading hat (^).
-=======
 The following is an example of deep de-referencing with an object. Notice how the top level salesArguments must have a 
 hat (^) and the field key within that object must have the leading hat (^).
->>>>>>> Stashed changes
 
 ```javascript
 { 
@@ -305,11 +299,14 @@ ruleHarvester.start()
 
 ## Example
 
-The following is some snippets out of our example. This example will process any JSON files located in `./examples/input_watch_path`. It will load the JSON and pass it into the rule harvester. The rule harvester will calculate taxes and total price for the order then the output provider will output a txt file in `./examples/output_order_dispatch` that will show the order details.
+This repo provides a full example in the **examples** directory. The following are some snippets out of our example. 
+This example will process any JSON files located in `./examples/input_watch_path`. It will load the JSON and pass it 
+into the rule harvester. The rule harvester will calculate taxes and total price for the order then the output provider 
+will output a txt file in `./examples/output_order_dispatch` that will show the order details.
 
 > **Note:** The full example can be found in the `./examples` directory.
 
-To run the full example...
+To run the full example:
 1. Go to the example directory and run `npm i` to install packages.
 1. Then with the dependencies installed, run `npm run start`.
 1. Go to the example directory and run `cp example_* input_watch_path/`.
@@ -407,140 +404,156 @@ that rules can be nested and when doing so, you can achieve better performance b
 unnecessarily.
 
 ```javascript
+/**
+ * This is an example rule corpus that processes orders
+ **/
 module.exports = [
-  // First validate the order
-  {
-    name: 'Validate the incoming order',
-    rules: [
-      {
-        when: 'always',
-        then: [{ closure: 'validateOrder' }],
-      },
-    ],
-  },
-  // Now that we've validated, fire off some rules only for VALID ORDERS
-  {
-    name: 'process valid orders',
-    rules: [
-      {
-        when: 'orderIsValid',
-        then: [
-          // Set the Sales Tax for Digital Orders first since those don't have per-state sales tax
-          {
-            name: 'process digital item orders',
-            rules: [
-              {
-                when: [{ closure: 'checkProductType', type: 'digital' }],
-                then: [{ closure: 'setSalesTaxPercentage', percentage: 0 }],
-              },
-            ],
-          },
-          // Next Set the Sales Tax for Non-Digital Orders where we do have to check the state
-          {
-            name: 'process non digital item orders',
-            rules: [
-              {
-                when: [{ closure: 'checkNotProductType', type: 'digital' }],
-                then: [
-                  // Set the Sales Tax according to the order's state
-                  {
-                    name: 'process by state',
-                    rules: [
-                      {
-                        when: [{ closure: 'checkShippingState', state: 'FL' }],
+   // First validate the order
+   {
+      name: 'Validate the incoming order',
+      rules: [
+         {
+            when: 'always',
+            then: [{ closure: 'validateOrder' }],
+         },
+      ],
+   },
+   // Now that we've validated, fire off some rules only for VALID ORDERS
+   {
+      name: 'process valid orders',
+      rules: [
+         {
+            when: 'orderIsValid',
+            then: [
+               // Set the Sales Tax for Digital Orders first since those don't have per-state sales tax
+               {
+                  name: 'process digital item orders',
+                  rules: [
+                     {
+                        when: [{ closure: 'checkProductType', type: 'digital' }],
                         then: [
-                          { closure: 'setSalesTaxPercentage', percentage: 6 },
+                           { closure: 'setSalesTaxPercentageFixed', percentage: 0 },
                         ],
-                      },
-                      {
-                        when: [{ closure: 'checkShippingState', state: 'CA' }],
+                     },
+                  ],
+               },
+               // Next Set the Sales Tax for Non-Digital Orders where we do have to check the state
+               {
+                  name: 'process non digital item orders',
+                  rules: [
+                     {
+                        when: [{ closure: 'checkNotProductType', type: 'digital' }],
                         then: [
-                          { closure: 'setSalesTaxPercentage', percentage: 7.5 },
+                           // Set the Sales Tax according to the order's state
+                           {
+                              name: 'process by state',
+                              rules: [
+                                 {
+                                    when: [{ closure: 'checkShippingState', state: 'FL' }],
+                                    then: [
+                                       {
+                                          closure: 'setSalesTaxPercentage',
+                                          percentClosureName: 'getSalesTaxPercentageFl',
+                                       },
+                                    ],
+                                 },
+                                 {
+                                    when: [{ closure: 'checkShippingState', state: 'CA' }],
+                                    then: [
+                                       {
+                                          closure: 'setSalesTaxPercentage',
+                                          percentClosureName: 'getSalesTaxPercentageCa',
+                                       },
+                                    ],
+                                 },
+                              ],
+                           },
                         ],
-                      },
-                    ],
-                  },
-                ],
-              },
+                     },
+                  ],
+               },
+               // Now that we have Sales Tax set based on the above criteria, we can process the order finally!
+               {
+                  name: 'Send the Order Bill',
+                  rules: [
+                     {
+                        when: 'always',
+                        then: [
+                           { closure: 'calculateTaxes' },
+                           { closure: 'calculateTotalPrice' },
+                           { closure: 'buildOrderDispatch' },
+                        ],
+                     },
+                  ],
+               },
             ],
-          },
-          // Now that we have Sales Tax set based on the above criteria, we can process the order finally!
-          {
-            name: 'Send the Order Bill',
-            rules: [
-              {
-                when: 'always',
-                then: [
-                  { closure: 'calculateTaxes' },
-                  { closure: 'calculateTotalPrice' },
-                  { closure: 'buildOrderDispatch' },
-                ],
-              },
-            ],
-          },
-        ],
-      },
-    ],
-  },
-  // And fire off some rules only for INVALID ORDERS
-  {
-    name: 'Process invalid Orders',
-    rules: [
-      {
-        when: 'orderIsNotValid',
-        then: [{ closure: 'buildOrderDispatch_InvalidOrder' }],
-      },
-    ],
-  },
+         },
+      ],
+   },
+   // And fire off some rules only for INVALID ORDERS
+   {
+      name: 'Process invalid Orders',
+      rules: [
+         {
+            when: 'orderIsNotValid',
+            then: [{ closure: 'buildOrderDispatch_InvalidOrder' }],
+         },
+      ],
+   },
 ];
 ```
 
 This Rule Set does the following with each of the inputs it receives:
 1. Calls a validation closure and marks the order as valid or invalid depending on that closure's logic.
 1. Processes the order if it's valid (which has nested rules to do a bit more processing)
-   1. When the item is a digital item, sets the sales tax to 0%.
+   1. When the item is a digital item, sets the sales tax to 0% directly.
    1. When the item is non-digital, introduces another nested rule to add sales tax by state.
-      1. When the shipping state is FL, set sales tax to 6%.
-      1. When shipping state is CA, set sales tax to 7.5%.
+      1. When the shipping state is FL, set sales tax to whatever the parameter closure getSalesTaxPercentageFl returns.
+         1. The getSalesTaxPercentageFl returns 6.0%.
+      1. When shipping state is CA, set sales tax to whatever the parameter closure getSalesTaxPercentageCa returns.
+         1. The getSalesTaxPercentageCa returns 7.5%.
    1. Still with a valid order, calculates taxes, total price and then builds an order dispatch.
 1. Alternatively, processes an invalid order which builds an invalid order dispatch.
 
 ### Closure Definitions Example
 
-In order for the rules to work, we add closure functions that we reference in the corpus. Closure functions defined 
+In order for the rules to work, we add closure functions that we reference in the corpus. Closure functions are defined 
 using a name, handler, and possibly some options. The handler function takes facts and context as the input and outputs 
 the resulting facts. Context can contain parameters that are passed into it. In addition, a corpus can be defined with 
 an array of rules similar to how the corpus definitions are defined. Just add a rules[] array field to the closure 
 definition and remove the handler function.
 
-For example: setSalesTaxPercentage closure looks like the following. Word of caution. Whatever the handler returns 
+For example: setSalesTaxPercentage closure looks like the following. Word of caution: whatever the handler returns 
 becomes the new facts. By our convention, the facts are intended to be changed, and we extend the facts at each step. 
 Each rule and each group should extend the facts. If null or undefined or some other junk data is inserted 
-unintentionally then it could cause the engine not work as intended. For this reason, all closures should validate 
+unintentionally then it could cause the engine to not work as intended. For this reason, all closures should validate 
 data to be present before performing actions!
 
-> **Note:** Any closure that changes `facts` must also return the changed `facts` object, otherwise, the modification will not be seen in the rules that follow!
+> **Note:** Any closure that changes `facts` must also return the changed `facts` object, otherwise, the modification 
+> will not be seen in the rules that follow!
 
 ```javascript
 module.exports = [
-  {
-    /**
-     * setSalesTaxPercentage
-     * Set the sales tax percentage
-     * @param - facts
-     * @param - context
-     * @return - Set the salesTaxPercentage in the facts
-     **/
-    name: 'setSalesTaxPercentage',
-    handler(facts, context) {
-      facts.salesTaxPercentage = context.parameters.percentage;
-      return facts; // IMPORTANT TO RETURN THE CHANGED facts
-    },
-    options: { required: ['percentage'] },
-  }
+   {
+      /**
+       * setSalesTaxPercentageFixed
+       * Set the sales tax percentage to a fixed value passed into the closure.
+       * @param - facts
+       * @param - context
+       * @return - Set the salesTaxPercentage in the facts
+       **/
+      name: 'setSalesTaxPercentageFixed',
+      handler(facts, context) {
+         facts.salesTaxPercentage = context.parameters.percentage;
+         return facts;
+      },
+   },
   // Other closures defined here
 ]
 ```
+
+> **Note:** It is also possible for a closure to receive not just static parameters (like 'percentage' above) but also
+> a reference to another closure to use inside the main closure. See [Closure as a Parameter to another Closure](#closure-as-a-parameter-to-another-closure).
 
 ### Configuration example
 
@@ -562,6 +575,22 @@ let ruleHarvester = new RuleHarvester({
 
 ruleHarvester.start();
 ```
+
+## Rule Harvester Internals
+
+In this section, we call out interesting implementation details of Rule Harvester.
+
+### Injecting Context into Closures and Facts
+
+> **Note:** This section is Work In Progress.
+
+In some cases, it's helpful to be able to inject context into a closure that lies outside of Facts from an input provider. 
+For example, for a logger with specific context info. This is data that really does not fit in the facts object but are 
+helpful from the context of the closures. Rules-js does not have this functionality, so Rule Harvester wraps the facts 
+object and wraps the closure functions with some extra context. This is then unwrapped as needed, especially when 
+interfacing with Rules-js.
+
+// TODO: Add example of how an input provider can pass context.
 
 ## License
 

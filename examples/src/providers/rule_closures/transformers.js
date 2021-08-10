@@ -35,9 +35,8 @@ module.exports = [
       closureParameters: ['percentClosureName'],
     },
     async handler(facts, context) {
-      const salesTaxPercentageObject =
+      facts.salesTaxPercentage =
         await context.parameters.percentClosureName.process(facts, context);
-      facts.salesTaxPercentage = salesTaxPercentageObject.percentage;
       return facts;
     },
   },
@@ -65,7 +64,7 @@ module.exports = [
      **/
     name: 'getSalesTaxPercentageFl',
     handler(facts, context) {
-      return { percentage: 6.0 };
+      return 6.0;
     },
   },
   {
@@ -78,7 +77,7 @@ module.exports = [
      **/
     name: 'getSalesTaxPercentageCa',
     handler(facts, context) {
-      return { percentage: 7.5 };
+      return 7.5;
     },
   },
   {
