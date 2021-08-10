@@ -117,16 +117,16 @@ export default class RuleHarvester {
       try {
         // Parse thisRunContext outof facts
         let thisRunContext =
-          factsAndOrRunContext?.thisRunContextSOMELONGRANDOMISHSTRING;
+          factsAndOrRunContext?.thisRunContext_RuleHarvesterWrapped;
         let facts;
         
-        const isClosureParameterDirectCall = !factsAndOrRunContext?.thisRunContextSOMELONGRANDOMISHSTRING;
+        const isClosureParameterDirectCall = !factsAndOrRunContext?.thisRunContext_RuleHarvesterWrapped;
         // This is to fix a bug for some edge cases where it gets to this wrapper from rules-js function.process(facts,context) calls
         if (
           thisRunContext ||
-          factsAndOrRunContext.factsSOMELONGRANDOMISHSTRING
+          factsAndOrRunContext.facts_RuleHarvesterWrapped
         ) {
-          facts = factsAndOrRunContext?.factsSOMELONGRANDOMISHSTRING;
+          facts = factsAndOrRunContext?.facts_RuleHarvesterWrapped;
           context.rulesFired.thisRunContextSOMELONGRANDOMISHSTRING =
             thisRunContext;
         } else {
@@ -165,8 +165,8 @@ export default class RuleHarvester {
         // If this is a a direct call of a closure parameter using the closureParameters functionality then we need to skip this line
         if (result && !isClosureParameterDirectCall) {
           result = {
-            factsSOMELONGRANDOMISHSTRING: result,
-            thisRunContextSOMELONGRANDOMISHSTRING: thisRunContext,
+            facts_RuleHarvesterWrapped: result,
+            thisRunContext_RuleHarvesterWrapped: thisRunContext,
           };
         }
       } catch (e) {
@@ -329,10 +329,10 @@ export default class RuleHarvester {
           // and pass facts to the original handler and extend context with thisRunContext
           let factsAndContext: any;
           ({ fact: factsAndContext } = await this.engine.process(group, {
-            thisRunContextSOMELONGRANDOMISHSTRING: thisRunContext || {},
-            factsSOMELONGRANDOMISHSTRING: fact,
+            thisRunContext_RuleHarvesterWrapped: thisRunContext || {},
+            facts_RuleHarvesterWrapped: fact,
           }));
-          fact = factsAndContext?.factsSOMELONGRANDOMISHSTRING; // If undefined facts then we still want to proceed
+          fact = factsAndContext?.facts_RuleHarvesterWrapped; // If undefined facts then we still want to proceed
         }
       } catch (e) {
         error = e;
