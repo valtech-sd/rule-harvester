@@ -18,12 +18,12 @@ module.exports = class RuleInputProviderDirectoryWatcher {
         console.log(path, inputStr.toString());
         // Convert to json
         const inputObj = JSON.parse(inputStr.toString());
-        // Add file path to input
-        inputObj.file = path;
+        // Add context to input so we can store the file path of the order file
+        let context = {orderFile: path};
         // Delete file
         await unlink(path);
         // Pass to rules harvester ("inputObj" will be passed as "facts" to the rules engine).
-        await applyInputCb(inputObj);
+        await applyInputCb(inputObj, context);
       } catch (e) {
         console.log('Input Handler Error', e, path);
       }

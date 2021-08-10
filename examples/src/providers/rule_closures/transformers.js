@@ -2,25 +2,6 @@ const _ = require('lodash');
 
 // These are just example closures to transform the data
 module.exports = [
-  // {
-  //   /**
-  //    * extendFacts
-  //    * Extends field paths to match parameters
-  //    * do this by...
-  //    * 1. Loop through all parameter keys
-  //    * 2. For each key set that value based on the key
-  //    * @param - facts
-  //    * @param - context
-  //    * @return - The facts after they were extended
-  //    **/
-  //   name: 'extendFacts',
-  //   handler(facts, context) {
-  //     for (let field of Object.keys(context.parameters)) {
-  //       _.set(facts, field, context.parameters[field]);
-  //     }
-  //     return facts;
-  //   },
-  // },
   {
     /**
      * setSalesTaxPercentage

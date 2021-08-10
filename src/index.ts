@@ -355,6 +355,7 @@ export default class RuleHarvester {
               facts: fact,
               error,
               errorGroup: error ? group : undefined,
+              context: thisRunContext,
             })
           );
         }
@@ -370,7 +371,7 @@ export default class RuleHarvester {
         }
       }
 
-      // If an error occured we want to throw it back to the input provider
+      // If an error occurred we want to throw it back to the input provider
       if (error) {
         throw error;
       } else {

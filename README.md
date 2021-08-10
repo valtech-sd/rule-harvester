@@ -579,15 +579,58 @@ In this section, we call out interesting implementation details of Rule Harveste
 
 ### Injecting Context into Closures and Facts
 
-> **Note:** This section is Work In Progress.
-
 In some cases, it's helpful to be able to inject context into a closure that lies outside of Facts from an input provider. 
 For example, for a logger with specific context info. This is data that really does not fit in the facts object but are 
-helpful from the context of the closures. Rules-js does not have this functionality, so Rule Harvester wraps the facts 
-object and wraps the closure functions with some extra context. This is then unwrapped as needed, especially when 
-interfacing with Rules-js.
+helpful from the context of the closures and even any Output providers. Rules-js does not have this functionality, so 
+Rule Harvester wraps the facts object and wraps the closure functions with some extra context. This is then unwrapped 
+and exposed as needed, especially when interfacing with Rules-js.
 
-// TODO: Add example of how an input provider can pass context.
+For instance, in the **example** provided in this repo, we use context to hold the "name" of the order file being 
+processed. Here is what that looks like in the input provider:
+
+```javascript
+// Add context to input so we can store the file path of the order file
+let context = {orderFile: path}; // 1
+
+// Other code ommitted here
+
+// Pass to rules harvester ("inputObj" will be passed as "facts" to the rules engine).
+await applyInputCb(inputObj, context); // 2
+```
+
+Note:
+1. We create a context variable to hold a context object of our choice. This can be anything we want it to be. An object
+   is most useful, but it could theoretically be a primitive!
+1. We then pass that context into the method `applyInputCb()` along with our `inputObj` (which becomes our `facts` into
+   the rules engine) and the `context` we just created.
+   
+With this in place, the context is then exposed to each and every closure. For example:
+
+```javascript
+module.exports = [
+   {
+      name: 'someFancyClosure',
+      handler(facts, context) {
+         // Act on your facts, note `context` is available here! You can use it in updating facts, performing logic, etc. 
+         return facts;
+      },
+   },
+   // Other closures defined here
+]
+```
+
+Similarly, context is passed into Outputs as well. For example:
+
+```javascript
+  async outputResult({ facts, error, errorGroup, context }) {
+    // Note facts, context and other items are exposed here as well! 
+  }
+```
+
+### ruleGroupOverrides
+
+// TODO: Add a description of how a certain Input can call for a specific named Rule Group.
+// TODO: Add as an example.
 
 ## License
 
