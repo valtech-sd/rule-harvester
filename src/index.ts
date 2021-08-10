@@ -119,7 +119,8 @@ export default class RuleHarvester {
         let thisRunContext =
           factsAndOrRunContext?.thisRunContextSOMELONGRANDOMISHSTRING;
         let facts;
-
+        
+        const isClosureParameterDirectCall = !factsAndOrRunContext?.thisRunContextSOMELONGRANDOMISHSTRING;
         // This is to fix a bug for some edge cases where it gets to this wrapper from rules-js function.process(facts,context) calls
         if (
           thisRunContext ||
@@ -160,8 +161,9 @@ export default class RuleHarvester {
           ? await this.config.closureHandlerWrapper(facts, contextExt, handler) // then call wrapper funtion
           : await handler(facts, contextExt); // else call handler directly
 
-        if (result) {
-          // If !result then it actually needs to return what was specified
+        // If result is undefined then skip this line
+        // If this is a a direct call of a closure parameter using the closureParameters functionality then we need to skip this line
+        if (result && !isClosureParameterDirectCall) {
           result = {
             factsSOMELONGRANDOMISHSTRING: result,
             thisRunContextSOMELONGRANDOMISHSTRING: thisRunContext,
