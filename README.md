@@ -169,7 +169,7 @@ In the above example: (Match the numbers below in the code above)
 Until this point, you've passed static values, like strings and numbers, to closures as parameters. What if you
 want to reference a fact property for a comparison? This is where de-referencing comes in!
 
-You can use the caret character (`^`), sometimes called a "hat" to start a property name to specify that the parameter
+You can use the caret character (`^`), sometimes called a "hat", to start a property name to specify that the parameter
 value should be treated as a path in the facts object instead of a static value. 
 
 To illustrate this, let's start from this fact:
