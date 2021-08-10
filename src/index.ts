@@ -127,17 +127,17 @@ export default class RuleHarvester {
           factsAndOrRunContext.facts_RuleHarvesterWrapped
         ) {
           facts = factsAndOrRunContext?.facts_RuleHarvesterWrapped;
-          context.rulesFired.thisRunContextSOMELONGRANDOMISHSTRING =
+          context.rulesFired.thisRunContext_RuleHarvesterWrapped =
             thisRunContext;
         } else {
           facts = factsAndOrRunContext;
         }
         if (
           !thisRunContext &&
-          context.rulesFired.thisRunContextSOMELONGRANDOMISHSTRING
+          context.rulesFired.thisRunContext_RuleHarvesterWrapped
         ) {
           thisRunContext =
-            context.rulesFired.thisRunContextSOMELONGRANDOMISHSTRING;
+            context.rulesFired.thisRunContext_RuleHarvesterWrapped;
         }
         let contextExt = _.defaults(context, thisRunContext, this.extraContext);
         contextExt.closureName = name;
