@@ -577,12 +577,12 @@ ruleHarvester.start();
 
 In this section, we call out interesting implementation details of Rule Harvester.
 
-### Injecting Context into Closures and Facts
+### Injecting Context into Inputs, Outputs, and Closures
 
 In some cases, it's helpful to be able to inject context into a closure that lies outside of Facts from an input provider. 
 For example, for a logger with specific context info. This is data that really does not fit in the facts object but are 
 helpful from the context of the closures and even any Output providers. Rules-js does not have this functionality, so 
-Rule Harvester wraps the facts object and wraps the closure functions with some extra context. This is then unwrapped 
+Rule Harvester wraps the facts object, closure functions and inputs/outputs with some extra context. This is then unwrapped 
 and exposed as needed, especially when interfacing with Rules-js.
 
 For instance, in the **example** provided in this repo, we use context to hold the "name" of the order file being 
