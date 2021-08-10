@@ -80,12 +80,12 @@ export default class RuleHarvester {
 
   /**
     * dereferenceObject
-    * Used to derefernce fields within an object. A field is dereferenced if the key begins with a "^"
+    * Used to dereference fields within an object. A field is de-referenced if the key begins with a "^"
     * Call dereferenceSingleValue which does the following
     * - If values are string then get path from facts object
     * - If value is an object then call this recursively
     * - If value is an array then call dereferenceArray
-    *   - dereferenceArray uses the leading character of the value to determine if something should be dereferenced or not
+    *   - dereferenceArray uses the leading character of the value to determine if something should be de-referenced or not
     */
   dereferenceObject(facts: any, parameters: any) {
     let parameterKeys = Object.keys(parameters || {});
@@ -222,7 +222,7 @@ export default class RuleHarvester {
    * This function configures the engine.
    * 1. Instantiates the engine
    * 2. Sets up the engine corpus (definitions)
-   * 3. Sets of the closers (Available funciton closures for the corpus to work from)
+   * 3. Sets of the closers (Available function closures for the corpus to work from)
    * @returns - None
    **/
   setup() {
@@ -289,8 +289,10 @@ export default class RuleHarvester {
    * start the Rules Harvester.
    * Does this by...
    * 1. Does this by registering an input handler for each rule input
-   * 2. Run setup input provider to initialize the rules enigne
-   * NOTE: Setup is purposly run after registerInput because the input provider should be able to modify the corpus or configuration during setup
+   * 2. Run setup input provider to initialize the rules engine
+   * NOTE: Setup is purposely run after registerInput because the input provider should be able to modify the corpus
+   * or configuration during setup
+   * 
    * @params - None
    * @returns void
    **/
