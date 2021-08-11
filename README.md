@@ -8,7 +8,7 @@
 
 ## Overview
 
-Rule Harvester is a general purpose rules engine. The Rules Engine receives an input and then processes rule definitions 
+Rule Harvester is a general purpose rules engine. The rules engine receives an input and then processes rule definitions 
 against the input, changing that input along the way. Finally, the processed input is passed to an output.
 
 The rules engine comes with CORE INPUTS, OUTPUTS and CLOSURES but also supports custom inputs, outputs and closures to
