@@ -8,7 +8,7 @@
 
 ## Overview
 
-Rule Harvester is a general purpose rules engine. The Rules Engine receives an input and then processes rule definitions 
+Rule Harvester is a general purpose rules engine. The rules engine receives an input and then processes rule definitions 
 against the input, changing that input along the way. Finally, the processed input is passed to an output.
 
 The rules engine comes with CORE INPUTS, OUTPUTS and CLOSURES but also supports custom inputs, outputs and closures to
@@ -227,8 +227,9 @@ In the above example: (Match the numbers below in the code above)
 Until this point, you've passed static values, like strings and numbers, to closures as parameters. What if you
 want to reference a fact property for a comparison? This is where de-referencing comes in!
 
-You can use the caret character (`^`), sometimes called a "hat", to start a property name to specify that the parameter
-value should be treated as a path in the facts object instead of a static value. 
+You can use the caret character (`^`), sometimes called a "hat", to start the key name to specify that the parameter
+value should be treated as a path in the facts object instead of a static value. Because the hat is not allowed in
+JSON key names, we also quote it.
 
 To illustrate this, let's start from this fact:
 ```json
@@ -247,11 +248,11 @@ To illustrate this, let's start from this fact:
 }
 ```
 
-If you wanted to run a rule if `type` === "digital", you would represent it as follows:
+If you wanted to run a rule if `productType` === "digital", you would represent it as follows:
 
 ```javascript
 { 
-    when: [{closure: "equal", value1: "^productType", value2: "digital"}],
+    when: [{closure: "equal", "^value1": "productType", value2: "digital"}],
     then: [
        //... include other rules here ...
     ] 
@@ -260,7 +261,8 @@ If you wanted to run a rule if `type` === "digital", you would represent it as f
 
 In the above, the `equal` closure (part of Rule Harvester core conditional closures) will 
 be called and passed the **value** of your Facts object for the property `productType` and the string "digital". The `equal` 
-closure, as the name implies, returns true/false based on the equality of the two passed values.
+closure, as the name implies, returns true/false based on the equality of the two passed values (in this case a string
+and the value held by the productType property.)
 
 ##### Deep De-referencing With Objects
 
@@ -276,7 +278,9 @@ hat (^) and the field key within that object must have the leading hat (^).
 }
 ```
 
-The following is an example of deep de-referencing with an array. In the following example "salesOneCalculation.value" would be dereferenced but 123 would not be. With arrays the value must have a leading hat (^) for the nested parameter to be dereferenced. Note also, the top level "values" field had to have a leading hat (^).
+The following is an example of deep de-referencing with an array. In the following example "salesOneCalculation.value" 
+would be de-referenced but 123 would not be. With arrays the value must have a leading hat (^) for the nested parameter 
+to be de-referenced. Note also, the top level "values" field had to have a leading hat (^).
 
 ```javascript
 { 
@@ -781,6 +785,10 @@ for other functionality:
 
 // TODO: Add a description of how a certain Input can call for a specific named Rule Group.
 // TODO: Add as an example.
+
+## Roadmap
+
+- Consider JSON5 for rules and corpus.
 
 ## License
 

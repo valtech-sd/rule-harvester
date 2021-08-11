@@ -54,7 +54,7 @@ export default class RuleHarvester {
   ];
 
   /*****************************
-   * Derefrence parameters logic
+   * Dereference parameters logic
    *******************************/
 
   /**
