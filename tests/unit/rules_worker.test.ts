@@ -559,4 +559,163 @@ describe('Rules Harvester', () => {
       test: 'singleval',
     });
   });
+
+  it('Functional closureParameters work correctly', async () => {
+    let runTimeContext = {
+      runTimeContextValue: 'Functional closureParameters work correctly',
+    };
+    const corpus = [
+      {
+        name: 'TestHatPathsGroup',
+        rules: [
+          {
+            closure: 'callClosureParmeter',
+            closureParam: 'testClosureParmeter',
+          },
+        ],
+      },
+    ];
+    let { config, rulesInputStub, rulesOutputStub } =
+      Utils.generateRulesHarvesterConfig({
+        corpus,
+        closures: [
+          ...Utils.closures,
+          {
+            name: 'callClosureParmeter',
+            async handler(facts: any, context: any) {
+              facts.closureParamReturn =
+                await context.parameters.closureParam.process(facts, context);
+              return facts;
+            },
+            options: {
+              requred: ['closureParam'],
+              closureParameters: ['closureParam'],
+            },
+          },
+          {
+            name: 'testClosureParmeter',
+            handler(_facts: any, _context: any) {
+              return 123;
+            },
+          },
+          {
+            name: 'never',
+            handler(_facts: any, _context: any) {
+              return false;
+            },
+            options: {},
+          },
+          {
+            name: 'always',
+            handler(_facts: any, _context: any) {
+              return true;
+            },
+          },
+        ],
+        extraConfig: {},
+      });
+    // Construct
+    let rulesHarvester = new RulesHarvester(config);
+
+    // Start - This registers the callback handler
+    rulesHarvester.start();
+
+    // Call the applyRule callback registered by the rules harvester that will end up applying rules
+    await rulesInputStub.registerInput.lastCall.args[0](
+      { test: 1 },
+      runTimeContext
+    );
+
+    expect(rulesOutputStub.outputResult.called, 'outputResult was not called')
+      .to.be.true;
+
+    expect(
+      rulesOutputStub.outputResult.lastCall.args[0].facts,
+      'No '
+    ).to.deep.equal({
+      test: 1,
+      closureParamReturn: 123,
+    });
+  });
+
+  it('JSON closureParameters work correctly', async () => {
+    let runTimeContext = {
+      runTimeContextValue: 'JSON closureParameters work correctly',
+    };
+    const corpus = [
+      {
+        name: 'TestHatPathsGroup',
+        rules: [
+          {
+            closure: 'callClosureParmeter',
+            closureParam: 'testClosureParmeterWrapper',
+          },
+        ],
+      },
+    ];
+    let { config, rulesInputStub, rulesOutputStub } =
+      Utils.generateRulesHarvesterConfig({
+        corpus,
+        closures: [
+          ...Utils.closures,
+          {
+            name: 'never',
+            handler(_facts: any, _context: any) {
+              return false;
+            },
+            options: {},
+          },
+          {
+            name: 'always',
+            handler(_facts: any, _context: any) {
+              return true;
+            },
+          },
+          {
+            name: 'callClosureParmeter',
+            async handler(facts: any, context: any) {
+              facts.closureParamReturn =
+                await context.parameters.closureParam.process(facts, context);
+              return facts;
+            },
+            options: {
+              requred: ['closureParam'],
+              closureParameters: ['closureParam'],
+            },
+          },
+          {
+            name: 'testClosureParmeter',
+            handler(_facts: any, _context: any) {
+              return 321;
+            },
+          },
+          {
+            name: 'testClosureParmeterWrapper',
+            rules: [{ closure: 'testClosureParmeter' }], // We know this returns false for us
+          },
+        ],
+        extraConfig: {},
+      });
+    // Construct
+    let rulesHarvester = new RulesHarvester(config);
+
+    // Start - This registers the callback handler
+    rulesHarvester.start();
+
+    // Call the applyRule callback registered by the rules harvester that will end up applying rules
+    await rulesInputStub.registerInput.lastCall.args[0](
+      { },
+      runTimeContext
+    );
+
+    expect(rulesOutputStub.outputResult.called, 'outputResult was not called')
+      .to.be.true;
+
+    expect(
+      rulesOutputStub.outputResult.lastCall.args[0].facts,
+      'No '
+    ).to.deep.equal({
+      closureParamReturn: 321,
+    });
+  });
 });

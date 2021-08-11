@@ -1,0 +1,8 @@
+# .gitignore for the example
+
+# Exclude any input/output files for the example
+input_watch_path/*
+output_order_dispatch/*
+
+# Use .gitkeep to force some directories
+!.gitkeep

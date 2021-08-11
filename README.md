@@ -15,12 +15,16 @@ Rule Harvester is a general purpose rules engine. It processes rule definitions 
 The most obvious thing is that this will allow you to do is run rules. It will allow you to use an event source (by way of the input provider) to input data into the same set of rules. Each rules will modify the input as it sees fit and in the end will provide a single output. During that process, it is possible to run any number of asynchronous or synchronous function calls.
 
 ## Features
-- Chainable Rules where each rules modifies the input for another rule to make use of
-- Define rules using JSON
-- Add any number of closures (functions) to the rules engine for use
+- Chainable Rules where each rule modifies the input for another rule to make use of.
+- Define rules using JSON.
+- Add any number of closures (functions) to the rules engine.
 - Use any number of custom javascript functions within your conditions or actions.
-- Simple syntax with lots of flexibility
-- Nested conditions
+- Simple syntax with lots of flexibility.
+- Nested conditions.
+
+## TL:DR;
+
+Jump straight to our [example](#Example) to get started right away!
 
 ## Terms/Syntax
 
@@ -47,9 +51,9 @@ The following would just set a sale tax percentage value inside the facts object
 ```javascript
 [
   {
-    name: 'setSalesTaxPercetage',
+    name: 'setSalesTaxPercentage',
     handler(facts, context) {
-      facts.setSalesTaxPercetage = context.parameters.percentage
+      facts.setSalesTaxPercentage = context.parameters.percentage
       return facts;
     },
     options: { required: ['percentage'] },
@@ -87,54 +91,134 @@ Alternatively the above rule definition could be simplified to...
 
 Though the above example is rather useless it can allow you to easily see the rule syntax 
 
-#### Closure Parameters
+#### Closure as a Parameter to another Closure
 
-In order to use closure parameters you need to use options when setting up a closure. In the following example `calculatePercentage` is a closure parameter. You will want to pass both `facts` and `context` into the closure arguments.
+A closure can support being passed the name of another closure as a Parameter. This is similar to how JavaScript functions can 
+receive functions as arguments.
+
+In order to pass a closure as a parameter you need to use **options** when setting up the main closure. For example:
 
 ```javascript
 [
-  {
-    name: 'setSalesTaxPercetage',
-    handler(facts, context) {
-      facts.setSalesTaxPercetage = context.parameters.calculatePercentage(facts, context);
-      return facts;
-    },
-    options: { required: ['calculatePercentage'], closureParameters: ['calculatePercentage'] },
-  }
+   {
+      /**
+       * setSalesTaxPercentage
+       * Set the sales tax percentage, by calling ANOTHER closure, whose name is passed in as a parameter
+       * to this closure! The passed in closure must be defined, of course!
+       * @param - facts
+       * @param - context
+       * @return - Set the salesTaxPercentage in the facts
+       **/
+      name: 'setSalesTaxPercentage', // 1
+      // 2
+      options: {
+         closureParameters: ['percentClosureName'],
+      },
+      handler(facts, context) {
+         // 3
+         facts.salesTaxPercentage = context.parameters.percentClosureName.process(
+             facts,
+             context
+         );
+         return facts;
+      },
+   },
+   {
+      /**
+       * getSalesTaxPercentageFl
+       * Get the sales tax percentage for Florida
+       * @param - facts
+       * @param - context
+       * @return - The salesTaxPercentage for Florida
+       **/
+      name: 'getSalesTaxPercentageFl', // 4
+      handler(facts, context) {
+         return 6.0;
+      },
+   },
+   {
+      /**
+       * getSalesTaxPercentageCa
+       * Get the sales tax percentage for California
+       * @param - facts
+       * @param - context
+       * @return - The salesTaxPercentage for California
+       **/
+      name: 'getSalesTaxPercentageCa', // 5
+      handler(facts, context) {
+         return 7.5;
+      },
+   },
 ]
 ```
 
-#### Path Parameters Dereferencing (^)
+In the above example: (Match the numbers below in the code above)
+1. **setSalesTaxPercentage** is our main closure for setting the Sales Tax percent. We are going to set it by calling
+   another closure for each state.
+1. Notice how in this main closure, you set `options` so that the engine recognizes the parameter `percentClosureName` 
+   as a closure and loads it at runtime.
+1. Also note how you have to use a special syntax to "call" the parameter closure. We use the method `.process(facts, contaxt)` to
+   call the underlying closure and fetch results.
+1. In this section we declare our state specific closure for Florida. Note how it just returns a primitive in our case, 
+   specifically the Sales Tax rate as a number!
+1. Similarly, we declare our state specific closure for California. Similar to the Florida closure, this too just returns
+   a number!
 
-Use `^` to specify that the parameter value should be treated as a path in the facts object. 
+#### Path Parameters De-referencing (^)
 
-In the following example, `percentages.digital` is a path contained in the facts object. The parameters gets to the function handler as `percentage` without the leading `^` character and the value of `percentage` will equal `facts.percentage.digital`. If `facts.percentage.digital = 0.1` then when the `saleTaxPercentage` closure is called it will have `context.parameters.percentage` value be `0.1`
+Until this point, you've passed static values, like strings and numbers, to closures as parameters. What if you
+want to reference a fact property for a comparison? This is where de-referencing comes in!
+
+You can use the caret character (`^`), sometimes called a "hat", to start a property name to specify that the parameter
+value should be treated as a path in the facts object instead of a static value. 
+
+To illustrate this, let's start from this fact:
+```json
+{
+    "product": "AwesomeEbookOfSomeSort",
+    "shipping": {
+        "street": "123 sweet st.",
+        "city": "San Diego",
+        "state": "CA",
+        "zip": "12345"
+    },
+    "name": "Fred Jones",
+    "email": "fred@testsite.com",
+    "type": "digital",
+    "price": 240.00
+}
+```
+
+If you wanted to run a rule if `type` === "digital", you would represent it as follows:
+
+```javascript
+{ 
+    when: [{closure: "equal", value1: "^type", value2: "digital"}],
+    then: [
+       //... include other rules here ...
+    ] 
+}
+```
+
+In the above, the `equal` closure (not included in the example, just presented here for illustration purposes) will 
+be called and passed the **value** of your Facts object for the property `type` and the string "digital". The `equal` 
+closure, as the name implies, returns true/false based on the equality of the two passed values.
+
+##### Deep De-referencing With Objects
+
+The following is an example of deep de-referencing with an object. Notice how the top level salesArguments must have a 
+hat (^) and the field key within that object must have the leading hat (^).
 
 ```javascript
 { 
     when: [{closure: "checkProductType", type: "digital"}],
     then: [
-        {closure: "salesTaxPercetage" , "^percentage": 'percentages.digital' }
-        {closure: "calculateTaxes" }
-        {closure: "calculateTotalPrice" }
+        {closure: "salesTaxPercentage", "^salesArguments": { "^percentage" : "percentage.digital" } }
     ] 
 }
 ```
 
-##### Deep Dereferencing With Objects
-
-The following is an example of deep dereferencing with an object. Notice how the top level salesArguments must have a hat (^) and the field key within that object must have the leading hat (^).
-
-```javascript
-{ 
-    when: [{closure: "checkProductType", type: "digital"}],
-    then: [
-        {closure: "salesTaxPercetage" ,"^salesArguments": { "^percentage": "percentage.digital" } }
-    ] 
-}
-```
-
-The following is an example of deep dereferencing with an array. In the following example "salesOneCalculation.value" would be dereferenced but 123 would not be. With arrays the value must have a leading hat (^) for the nested parameter to be dereferenced. Note also, the top level "values" field had to have a leading hat (^).
+The following is an example of deep de-referencing with an array. In the following example "salesOneCalculation.value" would be dereferenced but 123 would not be. With arrays the value must have a leading hat (^) for the nested parameter to be dereferenced. Note also, the top level "values" field had to have a leading hat (^).
 
 ```javascript
 { 
@@ -173,7 +257,7 @@ A rules corpus is just an array of rule groups. This is what is passed into the 
         rules: [{ 
             when: [{closure: "checkProductType", type: "digital"}],
             then: [
-                { closure: "setSalesTaxPercetage", percentage: 0 }, 
+                { closure: "setSalesTaxPercentage", percentage: 0 }, 
             ], 
         }]
     },
@@ -215,14 +299,18 @@ ruleHarvester.start()
 
 ## Example
 
-The following is some snippets out of our example. This example will process any JSON files located in `./examples/input_watch_path`. It will load the JSON and pass it into the rule harvester. The rule harvester will calculate taxes and total price for the order then the output provider will output a txt file in `./examples/output_order_dispatch` that will show the order details.
+This repo provides a full example in the **examples** directory. The following are some snippets out of our example. 
+This example will process any JSON files located in `./examples/input_watch_path`. It will load the JSON and pass it 
+into the rule harvester. The rule harvester will calculate taxes and total price for the order then the output provider 
+will output a txt file in `./examples/output_order_dispatch` that will show the order details.
 
-**Full Example**: Can be found in `./examples`
+> **Note:** The full example can be found in the `./examples` directory.
 
-To run the full example...
-1. Go to the example directory and run `npm run start`
-2. Go to the example directory and run `cp example_* input_watch_path/`
-3. You should see 3 output files in `./examples/output_order_dispatch` that show the output
+To run the full example:
+1. Go to the example directory and run `npm i` to install packages.
+1. Then with the dependencies installed, run `npm run start`.
+1. Go to the example directory and run `cp example_* input_watch_path/`.
+1. You should see several output files in `./examples/output_order_dispatch` that show the output of processing each order.
 
 ### Input Provider Example
 
@@ -243,7 +331,7 @@ module.exports = class RuleInputProviderFileWatcher {
     const handleEvent = async path => {
       // 2
       const inputStr = await readFile(path); 
-      const inputObj = JSON.parse(inputStr);
+      const inputObj = JSON.parse(inputStr.toString());
       inputObj.file = path;
       // 3
       await unlink(path);
@@ -253,21 +341,23 @@ module.exports = class RuleInputProviderFileWatcher {
 
     // 5
     chokidar
-      .watch(path.resolve(__dirname) + '/../../input_watch_path')
+      .watch(path.resolve(__dirname) + '/../../input_watch_path', {ignoreInitial: true})
       .on('add', handleEvent);
   }
 };
 ```
 
 Notes:
-1. registerInput is what makes this an input provider
-2. Read file, converts it to JSON object and add file path to json
-3. Delete the added file
-4. Pass json object from input to the rules harvester
+1. You declare this class an input provider by implementing the `registerInput` method.
+1. The provider will be called when a file is added into the directory being watched. It then reads each file, 
+   converts the contents to a JSON object, and adds the file path to json for later use.
+1. Once the provider instance is done with the file, it deletes it.
+1. Finally, the provider passes the JSON object to the rules harvester where it will become "facts" in the rules 
+   processing chain.
 
 ### Output Provider Example
 
-After corpus is run we have some resulting output. This output provider can do what it wills with those output.
+After the Rules Engine runs, we have some resulting output which is handed to the output provider.
 
 ```javascript
 const fs = require('fs');
@@ -294,107 +384,175 @@ module.exports = class RuleOutputProviderFile {
 ```
 
 Notes:
-1. outputResult is what makes this an output provider
-2. write the orderDispatch string to the ./output_order_dispatch directory.
-3. Just log the facts at rule completion
+1. You declare this class an output provider by implementing the `outputResult` method.
+1. This class simply writes the orderDispatch string from the `facts` to the ./output_order_dispatch directory as an
+   order file.
+1. In addition, the class also logs the facts as received to the console.
 
-### Corpus Definitions Example
+### Corpus Example
 
-This is the corpus definition. This is where we define what the rules engine actually does. More details can be found at [Rules.Js](https://github.com/bluealba/rules-js) on how rules are defined.
-Each closure must be defined in our closure array and the rule-harvester library will add that closure to the closure registry. In essence a closure is a function that the corpus definition acts on. Closures can be defined with function handlers or as an array of rules similar to how the corpus definitions are defined.
+Below is a corpus example. This is where we define what the rules engine actually does with the input facts before 
+calling the output. 
+
+Since this library makes heavy use of Rules.js, you can read more details at [Rules.Js](https://github.com/bluealba/rules-js) 
+on how to define rules. 
+
+However, here is a primer. Each closure must be defined in our closure array, and the rule-harvester library will add 
+that closure to the closure registry. In essence a closure is a function that the corpus definition acts on. Closures 
+can be defined with function handlers or as an array of rules similar to how the corpus definitions are defined. Note 
+that rules can be nested and when doing so, you can achieve better performance by not repeating multiple conditions
+unnecessarily.
 
 ```javascript
 module.exports = [
-  {
-    name: 'process-digital-item-orders',
-    rules: [
-      // 1
-      {
-        when: [{ closure: 'checkProductType', type: 'digital' }],
-        then: [
-          { closure: 'setSalesTaxPercetage', percentage: 0 }, 
-        ],
-      },
-    ],
-  },
-  {
-    name: 'process-other-normal-orders',
-    rules: [
-      // 2
-      {
-        when: [
-          { closure: 'checkNotProductType', type: 'digital' },
-          { closure: 'checkShippingState', state: 'FL' },
-        ],
-        then: [
-          { closure: 'setSalesTaxPercetage', percentage: 6 }, 
-        ],
-      },
-      // 3
-      {
-        when: [
-          { closure: 'checkNotProductType', type: 'digital' },
-          { closure: 'checkShippingState', state: 'CA' },
-        ],
-        then: [
-          { closure: 'setSalesTaxPercetage', percentage: 7.5 },
-        ],
-      },
-    ],
-  },
-  {
-    name: 'send-order-bill',
-    rules: [
-      {
-        // 4
-        when: 'always', 
-        then: [
-          { closure: 'calculateTaxes' },
-          { closure: 'calculateTotalPrice' },
-          { closure: 'buildOrderDispatch' },
-        ],
-      },
-    ],
-  },
+   // First validate the order
+   {
+      name: 'Validate the incoming order',
+      rules: [
+         {
+            when: 'always',
+            then: [{ closure: 'validateOrder' }],
+         },
+      ],
+   },
+   // Now that we've validated, fire off some rules only for VALID ORDERS
+   {
+      name: 'process valid orders',
+      rules: [
+         {
+            when: 'orderIsValid',
+            then: [
+               // Set the Sales Tax for Digital Orders first since those don't have per-state sales tax
+               {
+                  name: 'process digital item orders',
+                  rules: [
+                     {
+                        when: [{ closure: 'checkProductType', type: 'digital' }],
+                        then: [
+                           { closure: 'setSalesTaxPercentageFixed', percentage: 0 },
+                        ],
+                     },
+                  ],
+               },
+               // Next Set the Sales Tax for Non-Digital Orders where we do have to check the state
+               {
+                  name: 'process non digital item orders',
+                  rules: [
+                     {
+                        when: [{ closure: 'checkNotProductType', type: 'digital' }],
+                        then: [
+                           // Set the Sales Tax according to the order's state
+                           {
+                              name: 'process by state',
+                              rules: [
+                                 {
+                                    when: [{ closure: 'checkShippingState', state: 'FL' }],
+                                    then: [
+                                       {
+                                          closure: 'setSalesTaxPercentage',
+                                          percentClosureName: 'getSalesTaxPercentageFl',
+                                       },
+                                    ],
+                                 },
+                                 {
+                                    when: [{ closure: 'checkShippingState', state: 'CA' }],
+                                    then: [
+                                       {
+                                          closure: 'setSalesTaxPercentage',
+                                          percentClosureName: 'getSalesTaxPercentageCa',
+                                       },
+                                    ],
+                                 },
+                              ],
+                           },
+                        ],
+                     },
+                  ],
+               },
+               // Now that we have Sales Tax set based on the above criteria, we can process the order finally!
+               {
+                  name: 'Send the Order Bill',
+                  rules: [
+                     {
+                        when: 'always',
+                        then: [
+                           { closure: 'calculateTaxes' },
+                           { closure: 'calculateTotalPrice' },
+                           { closure: 'buildOrderDispatch' },
+                        ],
+                     },
+                  ],
+               },
+            ],
+         },
+      ],
+   },
+   // And fire off some rules only for INVALID ORDERS
+   {
+      name: 'Process invalid Orders',
+      rules: [
+         {
+            when: 'orderIsNotValid',
+            then: [{ closure: 'buildOrderDispatch_InvalidOrder' }],
+         },
+      ],
+   },
 ];
 ```
 
-Notes:
-1. When the item is a digital item then set sales tax to 0%
-2. When the item is not digital and the shipping state is FL set sales tax to 6%
-2. When the item is not digital and the shipping state is CA set sales tax to 7.5%
-4. Calculate taxes, total price and then build an order dispatch
+This Rule Set does the following with each of the inputs it receives:
+1. Calls a validation closure and marks the order as valid or invalid depending on that closure's logic.
+1. Processes the order if it's valid (which has nested rules to do a bit more processing)
+   1. When the item is a digital item, sets the sales tax to 0% directly.
+   1. When the item is non-digital, introduces another nested rule to add sales tax by state.
+      1. When the shipping state is FL, set sales tax to whatever the parameter closure getSalesTaxPercentageFl returns.
+         1. The getSalesTaxPercentageFl returns 6.0%.
+      1. When shipping state is CA, set sales tax to whatever the parameter closure getSalesTaxPercentageCa returns.
+         1. The getSalesTaxPercentageCa returns 7.5%.
+   1. Still with a valid order, calculates taxes, total price and then builds an order dispatch.
+1. Alternatively, processes an invalid order which builds an invalid order dispatch.
 
 ### Closure Definitions Example
 
-In order for the corpuses to work. We must have closure functions defined for every closure used in the corpus. Closure functions defined using a name, handler, and possibly some options. The handler function takes facts and context as the input and outputs the resulting facts. context can contain parameters that are passed into it. In addition a corpus can be defined with an array of rules similar to how the corpus definitions are defined. Just add a rules[] array field to the closure defition and remove the handler function.
+In order for the rules to work, we add closure functions that we reference in the corpus. Closure functions are defined 
+using a name, handler, and possibly some options. The handler function takes facts and context as the input and outputs 
+the resulting facts. Context can contain parameters that are passed into it. In addition, a corpus can be defined with 
+an array of rules similar to how the corpus definitions are defined. Just add a rules[] array field to the closure 
+definition and remove the handler function.
 
-For example: setSalesTaxPercetage closure looks like the following. Word of caution. Whatever the handler returns becomes the new facts. By our convention the facts is intended to be changed and we extend the facts at each step. Each rule and each group should extend the facts. If null or undefined or some other junk data is inserted unintentionally then it could result the engine not working as intended
+For example: setSalesTaxPercentage closure looks like the following. Word of caution: whatever the handler returns 
+becomes the new facts. By our convention, the facts are intended to be changed, and we extend the facts at each step. 
+Each rule and each group should extend the facts. If null or undefined or some other junk data is inserted 
+unintentionally then it could cause the engine to not work as intended. For this reason, all closures should validate 
+data to be present before performing actions!
+
+> **Note:** Any closure that changes `facts` must also return the changed `facts` object, otherwise, the modification 
+> will not be seen in the rules that follow!
 
 ```javascript
 module.exports = [
-  {
-    /**
-     * setSalesTaxPercetage
-     * Set the sales tax percentage
-     * @param - facts
-     * @param - context
-     * @return - Set the salesTaxPercetage in the facts
-     **/
-    name: 'setSalesTaxPercetage',
-    handler(facts, context) {
-      facts.salesTaxPercetage = context.parameters.percentage;
-      return facts;
-    },
-    options: { required: ['percentage'] },
-  }
+   {
+      /**
+       * setSalesTaxPercentageFixed
+       * Set the sales tax percentage to a fixed value passed into the closure.
+       * @param - facts
+       * @param - context
+       * @return - Set the salesTaxPercentage in the facts
+       **/
+      name: 'setSalesTaxPercentageFixed',
+      handler(facts, context) {
+         facts.salesTaxPercentage = context.parameters.percentage;
+         return facts;
+      },
+   },
   // Other closures defined here
 ]
 ```
 
-**Full Example**: Can be found in `./examples`
+> **Note:** It is also possible for a closure to receive not just static parameters (like 'percentage' above) but also
+> a reference to another closure to use inside the main closure. See [Closure as a Parameter to another Closure](#closure-as-a-parameter-to-another-closure).
 
-### Coniguration example
+### Configuration example
 
 The following is an example of how to configure the rule harvester
 
@@ -404,10 +562,10 @@ const { default: RuleHarvester } = require('rule-harvester');
 
 let ruleHarvester = new RuleHarvester({
   providers: {
-    inputs: [new RuleInputProviderFileWatcher()],
+    inputs: [new RuleInputProviderDirectoryWatcher()],
     outputs: [new RuleOutputProviderFile()],
-    corpus: ruleCorpusesProvider,
-    closures: ruleClosuresProvider,
+    corpus: ruleCorpus,
+    closures: ruleClosures,
     logger: logger,
   },
 });
@@ -415,7 +573,75 @@ let ruleHarvester = new RuleHarvester({
 ruleHarvester.start();
 ```
 
-**Full Example**: Can be found in `./examples`
+## Rule Harvester Internals
+
+In this section, we call out interesting implementation details of Rule Harvester.
+
+### Injecting Context into Inputs, Outputs, and Closures
+
+In some cases, it's helpful to be able to inject context into a closure that lies outside of Facts from an input provider. 
+For example, for a logger with specific context info. This is data that really does not fit in the facts object but are 
+helpful from the context of the closures and even any Output providers. Rules-js does not have this functionality, so 
+Rule Harvester wraps the facts object, closure functions and inputs/outputs with some extra context. This is then unwrapped 
+and exposed as needed, especially when interfacing with Rules-js.
+
+For instance, in the **example** provided in this repo, we use context to hold the "name" of the order file being 
+processed. Here is what that looks like in the input provider:
+
+```javascript
+// Add context to input so we can store the file path of the order file
+let context = {orderFile: path}; // 1
+
+// Other code ommitted here
+
+// Pass to rules harvester ("inputObj" will be passed as "facts" to the rules engine).
+await applyInputCb(inputObj, context); // 2
+```
+
+Note:
+1. We create a context variable to hold a context object of our choice. This must be an object although it can take any 
+   form of your choice! (See below for a few property names that are not allowed.)
+1. We then pass that context into the method `applyInputCb()` along with our `inputObj` (which becomes our `facts` into
+   the rules engine) and the `context` we just created.
+   
+With this in place, the context is then exposed to each and every closure. For example:
+
+```javascript
+module.exports = [
+   {
+      name: 'someFancyClosure',
+      handler(facts, context) {
+         // Act on your facts, note `context` is available here! You can use it in updating facts, performing logic, etc. 
+         return facts;
+      },
+   },
+   // Other closures defined here
+]
+```
+
+Similarly, context is passed into Outputs as well. For example:
+
+```javascript
+  async outputResult({ facts, error, errorGroup, context }) {
+    // Note facts, context and other items are exposed here as well! 
+  }
+```
+
+**Context property names that are not allowed in Context**
+
+The following properties are not allowed in the root of a context object since they are used already by Rule-Harvester
+for other functionality:
+
+- engine
+- parameters
+- rulesFired
+- currentRuleFlowActivated
+- fact
+
+### ruleGroupOverrides
+
+// TODO: Add a description of how a certain Input can call for a specific named Rule Group.
+// TODO: Add as an example.
 
 ## License
 

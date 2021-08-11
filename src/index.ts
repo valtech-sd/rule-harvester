@@ -80,12 +80,12 @@ export default class RuleHarvester {
 
   /**
     * dereferenceObject
-    * Used to derefernce fields within an object. A field is dereferenced if the key begins with a "^"
+    * Used to dereference fields within an object. A field is de-referenced if the key begins with a "^"
     * Call dereferenceSingleValue which does the following
     * - If values are string then get path from facts object
     * - If value is an object then call this recursively
     * - If value is an array then call dereferenceArray
-    *   - dereferenceArray uses the leading character of the value to determine if something should be dereferenced or not
+    *   - dereferenceArray uses the leading character of the value to determine if something should be de-referenced or not
     */
   dereferenceObject(facts: any, parameters: any) {
     let parameterKeys = Object.keys(parameters || {});
@@ -117,26 +117,27 @@ export default class RuleHarvester {
       try {
         // Parse thisRunContext outof facts
         let thisRunContext =
-          factsAndOrRunContext?.thisRunContextSOMELONGRANDOMISHSTRING;
+          factsAndOrRunContext?.thisRunContext_RuleHarvesterWrapped;
         let facts;
-
+        
+        const isClosureParameterDirectCall = !factsAndOrRunContext?.thisRunContext_RuleHarvesterWrapped;
         // This is to fix a bug for some edge cases where it gets to this wrapper from rules-js function.process(facts,context) calls
         if (
           thisRunContext ||
-          factsAndOrRunContext.factsSOMELONGRANDOMISHSTRING
+          factsAndOrRunContext.facts_RuleHarvesterWrapped
         ) {
-          facts = factsAndOrRunContext?.factsSOMELONGRANDOMISHSTRING;
-          context.rulesFired.thisRunContextSOMELONGRANDOMISHSTRING =
+          facts = factsAndOrRunContext?.facts_RuleHarvesterWrapped;
+          context.rulesFired.thisRunContext_RuleHarvesterWrapped =
             thisRunContext;
         } else {
           facts = factsAndOrRunContext;
         }
         if (
           !thisRunContext &&
-          context.rulesFired.thisRunContextSOMELONGRANDOMISHSTRING
+          context.rulesFired.thisRunContext_RuleHarvesterWrapped
         ) {
           thisRunContext =
-            context.rulesFired.thisRunContextSOMELONGRANDOMISHSTRING;
+            context.rulesFired.thisRunContext_RuleHarvesterWrapped;
         }
         let contextExt = _.defaults(context, thisRunContext, this.extraContext);
         contextExt.closureName = name;
@@ -160,11 +161,12 @@ export default class RuleHarvester {
           ? await this.config.closureHandlerWrapper(facts, contextExt, handler) // then call wrapper funtion
           : await handler(facts, contextExt); // else call handler directly
 
-        if (result) {
-          // If !result then it actually needs to return what was specified
+        // If result is undefined then skip this line
+        // If this is a a direct call of a closure parameter using the closureParameters functionality then we need to skip this line
+        if (result && !isClosureParameterDirectCall) {
           result = {
-            factsSOMELONGRANDOMISHSTRING: result,
-            thisRunContextSOMELONGRANDOMISHSTRING: thisRunContext,
+            facts_RuleHarvesterWrapped: result,
+            thisRunContext_RuleHarvesterWrapped: thisRunContext,
           };
         }
       } catch (e) {
@@ -220,7 +222,7 @@ export default class RuleHarvester {
    * This function configures the engine.
    * 1. Instantiates the engine
    * 2. Sets up the engine corpus (definitions)
-   * 3. Sets of the closers (Available funciton closures for the corpus to work from)
+   * 3. Sets of the closers (Available function closures for the corpus to work from)
    * @returns - None
    **/
   setup() {
@@ -287,8 +289,10 @@ export default class RuleHarvester {
    * start the Rules Harvester.
    * Does this by...
    * 1. Does this by registering an input handler for each rule input
-   * 2. Run setup input provider to initialize the rules enigne
-   * NOTE: Setup is purposly run after registerInput because the input provider should be able to modify the corpus or configuration during setup
+   * 2. Run setup input provider to initialize the rules engine
+   * NOTE: Setup is purposely run after registerInput because the input provider should be able to modify the corpus
+   * or configuration during setup
+   * 
    * @params - None
    * @returns void
    **/
@@ -327,10 +331,10 @@ export default class RuleHarvester {
           // and pass facts to the original handler and extend context with thisRunContext
           let factsAndContext: any;
           ({ fact: factsAndContext } = await this.engine.process(group, {
-            thisRunContextSOMELONGRANDOMISHSTRING: thisRunContext || {},
-            factsSOMELONGRANDOMISHSTRING: fact,
+            thisRunContext_RuleHarvesterWrapped: thisRunContext || {},
+            facts_RuleHarvesterWrapped: fact,
           }));
-          fact = factsAndContext?.factsSOMELONGRANDOMISHSTRING; // If undefined facts then we still want to proceed
+          fact = factsAndContext?.facts_RuleHarvesterWrapped; // If undefined facts then we still want to proceed
         }
       } catch (e) {
         error = e;
@@ -353,6 +357,7 @@ export default class RuleHarvester {
               facts: fact,
               error,
               errorGroup: error ? group : undefined,
+              context: thisRunContext,
             })
           );
         }
@@ -368,7 +373,7 @@ export default class RuleHarvester {
         }
       }
 
-      // If an error occured we want to throw it back to the input provider
+      // If an error occurred we want to throw it back to the input provider
       if (error) {
         throw error;
       } else {
