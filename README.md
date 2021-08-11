@@ -11,7 +11,8 @@
 Rule Harvester is a general purpose rules engine. The Rules Engine receives an input and then processes rule definitions 
 against the input, changing that input along the way. Finally, the processed input is passed to an output.
 
-The rules engine comes with CORE INPUTS and OUTPUTS but also supports custom inputs and outputs. 
+The rules engine comes with CORE INPUTS, OUTPUTS and CLOSURES but also supports custom inputs, outputs and closures to
+suit any application's unique needs. 
 
 This package makes heavy use of [Rules.Js](https://github.com/bluealba/rules-js). We have a desire to use some specific 
 patterns and as a result we have decided to build our own Rule Harvester based off of Rules.Js. 
