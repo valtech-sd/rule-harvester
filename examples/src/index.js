@@ -16,7 +16,7 @@ const logger = require('./providers/custom-logger');
  * - ruleCorpus: This is the set of corpuses that is used to define what rules are applied to the input.
  * - ruleClosures: This is a list of function definitions available to the rules.
  */
-//
+
 let rulesHarvester = new RulesHarvester({
   providers: {
     inputs: [new RuleInputProviderDirectoryWatcher()],
