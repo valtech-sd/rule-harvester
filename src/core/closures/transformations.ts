@@ -39,22 +39,6 @@ const closures: IClosure[] = [
     {},
   ),
   /**
-   * Extend
-   * Extend facts with some extra values.
-   *  example: { closure: 'set', 'some.path': 1 } to set facts.some.path = 1
-   *  example: { closure: 'set', '^some.path': 'some.other.path' } to set facts.some.path = facts.some.other.path
-   */
-  closureGenerator(
-    'extend',
-    function (facts: any, context: any) {
-      for (let field of Object.keys(context.parameters)) {
-        _.set(facts, field, context.parameters[field]);
-      }
-      return facts;
-    },
-    {},
-  ),
-  /**
    * Push
    * Pushes a value onto an array. It is possible to push onto multiple arrays by providing multiple parameters
    *  example: { closure: 'push', key: 'path.to.some.array', value: 1 } - Facts will = {path: {to: { some: {array: [1]}}}} or it may have other values on the array if they were previosuly push to the array
@@ -73,19 +57,6 @@ const closures: IClosure[] = [
       return facts;
     },
     {},
-  ),
-  /**
-   * parameters
-   * Pulls the context.parameters into the facts object to be acted upon by other rules under the rules closure
-   */
-  closureGenerator(
-    'parameters',
-    function (facts: any, context: any) {
-      const path = context.parameters.parameters || 'parameters';
-      _.set(facts, path, _.cloneDeep(context.parameters)); // Move parameters to path specified
-      return facts;
-    },
-    { required: ['path'] },
   ),
 ];
 

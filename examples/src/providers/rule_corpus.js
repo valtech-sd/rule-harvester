@@ -25,7 +25,11 @@ module.exports = [
             rules: [
               {
                 when: [
-                  { closure: 'equal', value1: '^productType', value2: 'digital' },
+                  {
+                    closure: 'equal',
+                    '^value1': 'productType',
+                    value2: 'digital',
+                  },
                 ],
                 then: [
                   { closure: 'setSalesTaxPercentageFixed', percentage: 0 },
@@ -39,7 +43,11 @@ module.exports = [
             rules: [
               {
                 when: [
-                  { closure: 'not-equal', value1: '^productType', value2: 'digital' },
+                  {
+                    closure: 'not-equal',
+                    '^value1': 'productType',
+                    value2: 'digital',
+                  },
                 ],
                 then: [
                   // Set the Sales Tax according to the order's state
