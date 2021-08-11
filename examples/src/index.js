@@ -6,7 +6,7 @@ const ruleCorpus = require('./providers/rule_corpus');
 const logger = require('./providers/custom-logger');
 
 /**
- * This is just a quick example of how to initialize and start the rules Harvester.
+ * This is an example of how to initialize and start the Rule Harvester.
  * Basically we pass it various providers.
  * Required providers include:
  * - ruleInputs: Input providers - In this example, a single input provider that Calls a registered function when new

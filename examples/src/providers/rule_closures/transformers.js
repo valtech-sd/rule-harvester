@@ -105,7 +105,7 @@ module.exports = [
         facts.shipping !== undefined &&
         facts.name !== undefined &&
         facts.email !== undefined &&
-        facts.type !== undefined &&
+        facts.productType !== undefined &&
         facts.price !== undefined;
       return facts;
     },

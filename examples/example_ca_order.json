@@ -8,6 +8,6 @@
     },
     "name": "Fred Jones",
     "email": "fred@testsite.com",
-    "type": "food",
+    "productType": "food",
     "price": 260.00
 }
