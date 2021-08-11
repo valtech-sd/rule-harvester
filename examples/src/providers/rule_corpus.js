@@ -24,7 +24,9 @@ module.exports = [
             name: 'process digital item orders',
             rules: [
               {
-                when: [{ closure: 'checkProductType', type: 'digital' }],
+                when: [
+                  { closure: 'equal', value1: '^productType', value2: 'digital' },
+                ],
                 then: [
                   { closure: 'setSalesTaxPercentageFixed', percentage: 0 },
                 ],
@@ -36,7 +38,9 @@ module.exports = [
             name: 'process non digital item orders',
             rules: [
               {
-                when: [{ closure: 'checkNotProductType', type: 'digital' }],
+                when: [
+                  { closure: 'not-equal', value1: '^productType', value2: 'digital' },
+                ],
                 then: [
                   // Set the Sales Tax according to the order's state
                   {

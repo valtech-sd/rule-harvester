@@ -32,6 +32,11 @@ export * from './types';
 
 export * from './generators';
 
+// Export Core, Both as a single export and as individuals for flexibility
+export { default as CoreClosures } from './core/closures/index';
+export { default as CoreConditionals } from './core/closures/conditionals';
+export { default as CoreTransformations } from './core/closures/transformations';
+
 export default class RuleHarvester {
   providers: IRuleHarvesterProviders;
   config: IRuleHarvesterConfig;
@@ -48,12 +53,26 @@ export default class RuleHarvester {
     'fact',
   ];
 
-  /*****************
+  /*****************************
    * Derefrence parameters logic
-   ******************/
+   *******************************/
+
+  /**
+   * dereferenceString
+   * // TODO: Add a good comment about dereferenceString
+   * @param facts
+   * @param param
+   */
   dereferenceString(facts: any, param: string) {
     return _.get(facts, param);
   }
+
+  /**
+   * dereferenceArray
+   * // TODO: Add a good comment about dereferenceArray
+   * @param facts
+   * @param parameters
+   */
   dereferenceArray(facts: any, parameters: any[]) {
     for (let i = 0; i < parameters.length; i++) {
       const param = parameters[i];
@@ -66,6 +85,13 @@ export default class RuleHarvester {
     }
     return parameters;
   }
+
+  /**
+   * dereferenceSingleValue
+   * // TODO: Add a good comment about dereferenceSingleValue
+   * @param facts
+   * @param originalValue
+   */
   dereferenceSingleValue(facts: any, originalValue: any) {
     let newValue = originalValue;
     if (_.isString(originalValue)) {
@@ -101,10 +127,15 @@ export default class RuleHarvester {
     }
     return parameters;
   }
-  /*****************
+
+  /**
    * defaultClosureHandlerWrapper
    * This wraps the closure handler so that we log errors well
-   ******************/
+   *
+   * @param name
+   * @param handler
+   * @param options
+   */
   public defaultClosureHandlerWrapper(
     name: string,
     handler: (facts: any, context: any) => any | Promise<any>,

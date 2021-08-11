@@ -4,16 +4,6 @@ const _ = require('lodash');
 module.exports = [
   {
     /**
-     * always
-     * @return true always
-     **/
-    name: 'always',
-    handler(facts, context) {
-      return true;
-    },
-  },
-  {
-    /**
      * orderIsValid
      * example {closure: "orderIsValid"} - If the order is Valid
      * @param type
@@ -35,32 +25,6 @@ module.exports = [
     handler(facts, context) {
       return !facts.orderIsValid;
     },
-  },
-  {
-    /**
-     * checkProductType
-     * example {closure: "checkProductType", type: 'digital'} - If product type is a digital item
-     * @param type
-     * @return boolean - true if matching type
-     **/
-    name: 'checkProductType',
-    handler(facts, context) {
-      return facts.type === context.parameters.type;
-    },
-    options: { required: ['type'] },
-  },
-  {
-    /**
-     * checkNotProductType
-     * example {closure: "checkProductType", type: 'digital'} - If product type is not a digital item
-     * @param type
-     * @return boolean - true if not matching type
-     **/
-    name: 'checkNotProductType',
-    handler(facts, context) {
-      return facts.type !== context.parameters.type;
-    },
-    options: { required: ['type'] },
   },
   {
     /**

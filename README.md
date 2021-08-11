@@ -1,4 +1,4 @@
-# Rules Harvester
+# Rule Harvester
 
 [![CircleCI](https://circleci.com/gh/valtech-sd/rule-harvester.svg?style=svg)](https://circleci.com/gh/valtech-sd/rule-harvester)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -8,17 +8,28 @@
 
 ## Overview
 
-Rule Harvester is a general purpose rules engine. It processes rule definitions and allows for a highly configurable rules engine with custom inputs and outpus. This package makes heavy use of [Rules.Js](https://github.com/bluealba/rules-js). We have a desire to use some specific patterns and as a result we have decided to build our own rule harvester based off of Rules.Js. 
+Rule Harvester is a general purpose rules engine. The Rules Engine receives an input and then processes rule definitions 
+against the input, changing that input along the way. Finally, the processed input is passed to an output.
+
+The rules engine comes with CORE INPUTS, OUTPUTS and CLOSURES but also supports custom inputs, outputs and closures to
+suit any application's unique needs. 
+
+This package makes heavy use of [Rules.Js](https://github.com/bluealba/rules-js). We have a desire to use some specific 
+patterns and as a result we have decided to build our own Rule Harvester based off of Rules.Js. 
 
 ## What is a Rules Engine?
 
-The most obvious thing is that this will allow you to do is run rules. It will allow you to use an event source (by way of the input provider) to input data into the same set of rules. Each rules will modify the input as it sees fit and in the end will provide a single output. During that process, it is possible to run any number of asynchronous or synchronous function calls.
+A Rules Engine allows you to run rules against a piece of data, altering that data as the rules go. It allows you to use 
+an event source (by way of the input provider) to input data into the same set of rules. Each rules will modify the input 
+as it sees fit and in the end will provide a single output. During that process, it is possible to run any number of 
+asynchronous or synchronous function calls.
 
 ## Features
-- Chainable Rules where each rule modifies the input for another rule to make use of.
-- Define rules using JSON.
-- Add any number of closures (functions) to the rules engine.
-- Use any number of custom javascript functions within your conditions or actions.
+
+- Support for chainable Rules where each rule modifies the input, then subsequent rules received the modified input.
+- Rules defined using JSON.
+- Support for closures (functions) as part of the rules engine.
+- Support for custom javascript functions within your conditions or actions.
 - Simple syntax with lots of flexibility.
 - Nested conditions.
 
@@ -28,25 +39,37 @@ Jump straight to our [example](#Example) to get started right away!
 
 ## Terms/Syntax
 
-There is a need to define terms and syntax
+Let's begin by defining certain terms.
 
-### Facts
+### Facts (input)
 
-Facts are the terminology we use to refer to the data that the rules engine currently holds. When a blob of data is first passed to the rule harvester, that input is the start of those facts. This can just be a string but in most cases facts will be a JSON object of some sort. Each rule will then act on a fact and modify it in whatever way is needed. 
+The data coming from an input to the Rules Engine are called **Facts**. When a blob of data is passed to the Rule Harvester, that input is the 
+start state of the facts. An fact can just be a string but in most cases facts will be a JSON object of some sort. 
+Each rule will then act on a fact and modify it as needed. 
 
-### Input providers
+### Inputs
 
-Input providers are what send input into the rule harvester. That input becomes the start of the facts that will be processed while running the rules. An input provider must contain the function `registerInput(applyInputCb)` where applyInputCb is passed in from the ruleHarvester to the input provider and is called by the input provider to run facts against your rules. applyInputCb can take facts and a runtime context as arguments. runtimeContext extends the context when calling closures. If the runtimeContext contains `{testValue: 1}` then the context that is passed into a closure will contain `context.testvalue = 1`. This is useful for passing something like a specialty logger that needs to log some sort of run specific context.
+Inputs are what send data into the Rule Harvester. The data brought in by the input becomes the start of the facts that 
+will be processed while running through the rules. An input provider must contain the function `registerInput(applyInputCb)` 
+where `applyInputCb` is passed in from the ruleHarvester to the input provider and is called by the input provider to run 
+facts against your rules. `applyInputCb` can take facts and a runtime context as arguments. `runtimeContext` extends the 
+context when calling closures. If the `runtimeContext` contains `{testValue: 1}` then the context that is passed into a 
+closure will contain `context.testvalue = 1`. This is useful for passing something like a specialty logger that needs to 
+log some sort of run specific context.
 
-### Output providers
+### Outputs
 
-Output providers receive the final output from the input provider. In some cases it may write a file based on the output facts. In other cases, it may do an http REST call of some sort. An output provider must contain the function `outputResult({ facts, error, errorGroup })` where facts is the output fact.
+Outputs receive the final modified facts from the Rules Engine. In some cases it may write a file based on the output 
+facts. In other cases, it may do an http REST call of some sort. An output provider must contain the 
+function `outputResult({ facts, error, errorGroup })` where facts are the output modified facts after all rules
+have been processed.
 
 ### Closures
 
-Closures are functions that can be called from within a rule. All closures need to be defined by the calling system. Those closures will then be passed into the rule harvester during initialization.
+Closures are functions that can be called from within a rule. All closures need to be defined by the calling system. 
+Those closures will then be passed into the Rule Harvester during initialization.
 
-The following would just set a sale tax percentage value inside the facts object.
+The following is an example closure that sets a sale tax percentage value inside the facts object.
 
 ```javascript
 [
@@ -61,9 +84,25 @@ The following would just set a sale tax percentage value inside the facts object
 ]
 ```
 
+#### Core Closures
+
+Rule Harvester ships with a number of generic closures that are useful in many rules. These are referred to as 
+Core Closures. They are broken up into "conditionals" (closures that return a true/false boolean) and "transformations"
+(closures that alter facts in some generic way.) 
+
+For example, the project includes an 'always' conditional that will always return true and is useful to have certain
+rules that always fire. Also, there is an 'equals' conditional that compares one value to another. You can use these 
+closures just like any other closure so long as you've included the Core Closures in your Rule Harvester configuration.
+See the section [Configuration example](#configuration-example) in this document to see how to include the Core Closures
+in your rules engine instances.
+
+The Rule Harvester maintainers expect to continually be adding to Core Closures. Because of that, rather than trying
+to explain each of the closures here, you are invited to check out the ./src/core/closures/ directory of this repo. Each
+core closure has a documentation block with example usages.
+
 ### Rules
 
-A rule is the smallest piece that will used to define what the rules harvester does.
+A rule is the smallest piece that will used to define what the Rule Harvester does.
 
 The following is one way to define them.
 
@@ -88,15 +127,34 @@ Alternatively the above rule definition could be simplified to...
     ]
 }
 ```
+ 
+The above rule would perform a certain action on facts when a certain closure `checkProductType` determines that a
+product type is "digital". In this case, the actions would be `calculateTaxes` and `calculateTotalPrice`. All of the 
+three items `checkProductType`, `calculateTaxes`, and `calculateTotalPrice` are closures that you get to define.
 
-Though the above example is rather useless it can allow you to easily see the rule syntax 
+#### Closures as conditions
+
+When you use a closure in the "when:" clause of a rule, we can say that the closure is a "condition". The output of
+closures used in "when:" clauses of rules should be `true` or `false`.
+
+#### Closures as actions
+
+When you use a closure in the "then:" clause of a rule, we can say that the closure is an "action". The output of
+closures used in "then:" clauses of rules should be the CHANGED FACTS, which are then passed further downstream to 
+other rules. 
+
+An action should change the `facts` object as needed, then return the `facts` object.
 
 #### Closure as a Parameter to another Closure
 
 A closure can support being passed the name of another closure as a Parameter. This is similar to how JavaScript functions can 
 receive functions as arguments.
 
-In order to pass a closure as a parameter you need to use **options** when setting up the main closure. For example:
+A closure can support Parameters. Similar to how JavaScript functions can receive arguments, these are properties are
+passed into the function that implements the closure.
+
+In order to use closure parameters you need to use options when setting up a closure. In the following example 
+`calculatePercentage` is a closure parameter. You will want to pass both `facts` and `context` into the closure arguments.
 
 ```javascript
 [
@@ -184,7 +242,7 @@ To illustrate this, let's start from this fact:
     },
     "name": "Fred Jones",
     "email": "fred@testsite.com",
-    "type": "digital",
+    "productType": "digital",
     "price": 240.00
 }
 ```
@@ -193,20 +251,20 @@ If you wanted to run a rule if `type` === "digital", you would represent it as f
 
 ```javascript
 { 
-    when: [{closure: "equal", value1: "^type", value2: "digital"}],
+    when: [{closure: "equal", value1: "^productType", value2: "digital"}],
     then: [
        //... include other rules here ...
     ] 
 }
 ```
 
-In the above, the `equal` closure (not included in the example, just presented here for illustration purposes) will 
-be called and passed the **value** of your Facts object for the property `type` and the string "digital". The `equal` 
+In the above, the `equal` closure (part of Rule Harvester core conditional closures) will 
+be called and passed the **value** of your Facts object for the property `productType` and the string "digital". The `equal` 
 closure, as the name implies, returns true/false based on the equality of the two passed values.
 
 ##### Deep De-referencing With Objects
 
-The following is an example of deep de-referencing with an object. Notice how the top level salesArguments must have a 
+The following is an example of deep de-referencing with an object. Notice how the top level salesArguments must have a
 hat (^) and the field key within that object must have the leading hat (^).
 
 ```javascript
@@ -231,7 +289,8 @@ The following is an example of deep de-referencing with an array. In the followi
 
 ### Rule Groups
 
-A rules group is simply an array of rules with a name attached. Keep in mind that rule groups act as reducers. Each step modifies the fact for the next rule to work on.
+A Rule Group is simply an array of rules with a name attached. Keep in mind that rule groups act as reducers. Each 
+step modifies the fact for the next rule to work on.
 
 ```javascript
 {
@@ -248,7 +307,8 @@ A rules group is simply an array of rules with a name attached. Keep in mind tha
 
 ### Rules Corpus
 
-A rules corpus is just an array of rule groups. This is what is passed into the rule harvester during initialization. The following is a small example of a rules corpus.
+The Rule Corpus is an array of rule groups. This is what is passed into the Rule Harvester during initialization. The 
+following is a small example of a Rule Corpus.
 
 ```javascript
 [ 
@@ -279,7 +339,7 @@ The package comes with some configuration options.
 | closureHandlerWrapper | (facts:any, context:any, handler:Function)=>Promise<any>| Wrapper function for all functional closures |
 
 
-The following shows how this can be configured
+The following shows how an instance of the rules engine can be configured:
 
 ```javascript
 const RuleHarvester = require('rule-harvester');
@@ -293,15 +353,18 @@ let ruleHarvester = new RuleHarvester({
     }
 });
 
-// To actually start the rule harvester do the following
+// To actually start the Rule Harvester do the following
 ruleHarvester.start()
 ```
+
+> **Note:** The above configuration does not include [Core Closures](#core-closures) provided by the rules engine. See the section
+> [Configuration example](#configuration-example) for how to include Core Closures.
 
 ## Example
 
 This repo provides a full example in the **examples** directory. The following are some snippets out of our example. 
 This example will process any JSON files located in `./examples/input_watch_path`. It will load the JSON and pass it 
-into the rule harvester. The rule harvester will calculate taxes and total price for the order then the output provider 
+into the Rule Harvester. The Rule Harvester will calculate taxes and total price for the order then the output provider 
 will output a txt file in `./examples/output_order_dispatch` that will show the order details.
 
 > **Note:** The full example can be found in the `./examples` directory.
@@ -314,7 +377,8 @@ To run the full example:
 
 ### Input Provider Example
 
-The following example watches `./examples/input_watch_path` for new files. It then passes the file to the rule harvester and deletes the original file.
+The following example watches `./examples/input_watch_path` for new files. It then passes the file to the Rule Harvester
+and deletes the original file.
 
 ```javascript
 const chokidar = require('chokidar');
@@ -322,37 +386,50 @@ const fs = require('fs');
 const { promisify } = require('util');
 const readFile = promisify(fs.readFile);
 const unlink = promisify(fs.unlink);
-var path = require('path');
+const path = require('path');
 
-module.exports = class RuleInputProviderFileWatcher {
-  // 1
-  async registerInput(applyInputCb) { 
-    
-    const handleEvent = async path => {
-      // 2
-      const inputStr = await readFile(path); 
-      const inputObj = JSON.parse(inputStr.toString());
-      inputObj.file = path;
-      // 3
-      await unlink(path);
-      // 4
-      await applyInputCb(inputObj);
-    };
+module.exports = class RuleInputProviderDirectoryWatcher {
+   // registerHandler
+   // This function is called from the RuleHarvester when start() is called.
+   // This is where the RuleHarvester registers itself with this input provider
+   async registerInput(applyInputCb) {
+      // Event handler for the file watcher
+      const handleEvent = async path => {
+         try {
+            // Read file as string
+            const inputStr = await readFile(path);
+            console.log(path, inputStr.toString());
+            // Convert to json
+            const inputObj = JSON.parse(inputStr.toString());
+            // Add context to input so we can store the file path of the order file
+            let context = {orderFile: path};
+            // Delete file
+            await unlink(path);
+            // Pass to rules harvester ("inputObj" will be passed as "facts" to the rules engine).
+            await applyInputCb(inputObj, context);
+         } catch (e) {
+            console.log('Input Handler Error', e, path);
+         }
+      };
 
-    // 5
-    chokidar
-      .watch(path.resolve(__dirname) + '/../../input_watch_path', {ignoreInitial: true})
-      .on('add', handleEvent);
-  }
+      // Setup a file watcher
+      chokidar
+          .watch(path.resolve(__dirname) + '/../../input_watch_path', {ignoreInitial: true})
+          .on('add', handleEvent);
+
+      console.log(
+          'RuleHarvester Example started. Copy an example order file into ./examples/input_watch_path then view the output in ./examples/output_order_dispatch'
+      );
+   }
 };
 ```
 
 Notes:
 1. You declare this class an input provider by implementing the `registerInput` method.
 1. The provider will be called when a file is added into the directory being watched. It then reads each file, 
-   converts the contents to a JSON object, and adds the file path to json for later use.
+   converts the contents to a JSON object, and adds the file path to facts context for later use.
 1. Once the provider instance is done with the file, it deletes it.
-1. Finally, the provider passes the JSON object to the rules harvester where it will become "facts" in the rules 
+1. Finally, the provider passes the JSON object to the Rule Harvester where it will become `facts` in the rules engine 
    processing chain.
 
 ### Output Provider Example
@@ -363,29 +440,38 @@ After the Rules Engine runs, we have some resulting output which is handed to th
 const fs = require('fs');
 const { promisify } = require('util');
 const writeFile = promisify(fs.writeFile);
-var path = require('path');
+const path = require('path');
 
 module.exports = class RuleOutputProviderFile {
-
-  // 1
-  async outputResult({ facts, error, errorGroup }) {
-    // 2
-    await writeFile(
-      `${path.resolve(__dirname)}/../../output_order_dispatch/${path.basename(
-        facts.file
-      )}.txt`,
-      facts.orderDispatch
-    );
-
-    // 3
-    console.log('Facts At Completion', facts);
-  }
+   // The rules Harvester will call the outputResult function after it is done processing input
+   async outputResult({ facts, error, errorGroup, context }) {
+      if (!error) {
+         // This writes a file to the ./output_order_dispatch directory
+         // It writes an output string that was built during the rule evaluation.
+         // Note here we get the file name from the context which was added to the
+         // runtime environment by the INPUT PROVIDER.
+         await writeFile(
+             `${path.resolve(__dirname)}/../../output_order_dispatch/${path.basename(
+                 context.orderFile
+             )}.txt`,
+             facts.orderDispatch
+         );
+         console.log('Facts At Completion', facts);
+      } else {
+         console.error(
+             'Output Provider - Error during provider run',
+             error,
+             errorGroup
+         );
+      }
+   }
 };
+
 ```
 
 Notes:
 1. You declare this class an output provider by implementing the `outputResult` method.
-1. This class simply writes the orderDispatch string from the `facts` to the ./output_order_dispatch directory as an
+1. This class simply writes the orderDispatch string from the `facts` and `context` (for the file path) to the ./output_order_dispatch directory as an
    order file.
 1. In addition, the class also logs the facts as received to the console.
 
@@ -404,6 +490,9 @@ that rules can be nested and when doing so, you can achieve better performance b
 unnecessarily.
 
 ```javascript
+/**
+ * This is an example rule corpus that processes orders
+ **/
 module.exports = [
    // First validate the order
    {
@@ -427,7 +516,9 @@ module.exports = [
                   name: 'process digital item orders',
                   rules: [
                      {
-                        when: [{ closure: 'checkProductType', type: 'digital' }],
+                        when: [
+                           { closure: 'equal', value1: '^productType', value2: 'digital' },
+                        ],
                         then: [
                            { closure: 'setSalesTaxPercentageFixed', percentage: 0 },
                         ],
@@ -439,7 +530,9 @@ module.exports = [
                   name: 'process non digital item orders',
                   rules: [
                      {
-                        when: [{ closure: 'checkNotProductType', type: 'digital' }],
+                        when: [
+                           { closure: 'not-equal', value1: '^productType', value2: 'digital' },
+                        ],
                         then: [
                            // Set the Sales Tax according to the order's state
                            {
@@ -503,8 +596,8 @@ module.exports = [
 This Rule Set does the following with each of the inputs it receives:
 1. Calls a validation closure and marks the order as valid or invalid depending on that closure's logic.
 1. Processes the order if it's valid (which has nested rules to do a bit more processing)
-   1. When the item is a digital item, sets the sales tax to 0% directly.
-   1. When the item is non-digital, introduces another nested rule to add sales tax by state.
+   1. When the productType is a digital item, sets the sales tax to 0% directly.
+   1. When the productType is non-digital, introduces another nested rule to add sales tax by state.
       1. When the shipping state is FL, set sales tax to whatever the parameter closure getSalesTaxPercentageFl returns.
          1. The getSalesTaxPercentageFl returns 6.0%.
       1. When shipping state is CA, set sales tax to whatever the parameter closure getSalesTaxPercentageCa returns.
@@ -520,7 +613,7 @@ the resulting facts. Context can contain parameters that are passed into it. In 
 an array of rules similar to how the corpus definitions are defined. Just add a rules[] array field to the closure 
 definition and remove the handler function.
 
-For example: setSalesTaxPercentage closure looks like the following. Word of caution: whatever the handler returns 
+For example: `setSalesTaxPercentage` closure looks like the following. Word of caution. Whatever the handler returns 
 becomes the new facts. By our convention, the facts are intended to be changed, and we extend the facts at each step. 
 Each rule and each group should extend the facts. If null or undefined or some other junk data is inserted 
 unintentionally then it could cause the engine to not work as intended. For this reason, all closures should validate 
@@ -554,24 +647,70 @@ module.exports = [
 
 ### Configuration example
 
-The following is an example of how to configure the rule harvester
+The following is an example of how to configure the Rule Harvester:
 
 ```javascript
-const { default: RuleHarvester } = require('rule-harvester');
-// Import all providers
+const { default: RulesHarvester } = require('rule-harvester');
+const RuleInputProviderDirectoryWatcher = require('./providers/rule_input_directory_watcher');
+const RuleOutputProviderFile = require('./providers/rule_output_file');
+const ruleClosures = require('./providers/rule_closures');
+const ruleCorpus = require('./providers/rule_corpus');
+const logger = require('./providers/custom-logger');
 
 let ruleHarvester = new RuleHarvester({
   providers: {
-    inputs: [new RuleInputProviderDirectoryWatcher()],
-    outputs: [new RuleOutputProviderFile()],
-    corpus: ruleCorpus,
-    closures: ruleClosures,
-    logger: logger,
+    inputs: [new RuleInputProviderDirectoryWatcher()], // 1
+    outputs: [new RuleOutputProviderFile()], // 2
+    corpus: ruleCorpus, // 3
+    closures: ruleClosures, // 4
+    logger: logger, // 5
   },
 });
 
 ruleHarvester.start();
 ```
+
+Note:
+1. Our input is the Directory Watcher we discussed above and which we bring in as a "require" from another file.
+1. Our output is the file output we discussed above and which we bring in as a "require" from another file.
+1. Our corpus is our set of rules, which we also discussed above and which we bring in as a "require" from another file.
+1. Our closures parameter is also a "require" from another file, but it bears a little explanation (see below).
+1. Finally we provide a logger which just outputs to console.
+
+Our **closures** parameter though is interesting because we combine both custom and [Core Closures](#core-closures) provided by Rule Harvester.
+
+```javascript
+// Bring in Core Conditionals and Transformations built into RuleHarvester
+const {
+  CoreClosures,
+  CoreTransformations,
+  CoreConditionals,
+} = require('rule-harvester');
+
+// Bring our own custom conditions, transformers and actions
+const conditions = require('./rule_closures/conditions');
+const transformers = require('./rule_closures/transformers');
+const actions = require('./rule_closures/actions');
+
+// Combine conditions, transformers and actions into an array that we export so we can use it in the rules engine instance.
+module.exports = [].concat(
+  // Coming from the Rule-Harvester!
+  CoreTransformations,
+  CoreConditionals,
+  // Custom for the Example
+  conditions,
+  transformers,
+  actions
+);
+```
+
+Note how Rule Harvester makes available three exports:
+- CoreClosures - Is actually a convenience export that includes ALL the closures below! It is meant to be used when
+  you want to include all the core closures and don't want to import them individually! Though it is OK to include
+  all in the "require" statement, you don't actually want to include both `CoreClosures` and any one of the others. If
+  you do, you'll get a runtime error when your engine launches!
+- CoreTransformations - Includes generic transformations. See [Core Closures](#core-closures) for more information.
+- CoreConditionals - Includes generic conditionals. See [Core Closures](#core-closures) for more information.
 
 ## Rule Harvester Internals
 
@@ -594,7 +733,7 @@ let context = {orderFile: path}; // 1
 
 // Other code ommitted here
 
-// Pass to rules harvester ("inputObj" will be passed as "facts" to the rules engine).
+// Pass to Rule Harvester ("inputObj" will be passed as "facts" to the rules engine).
 await applyInputCb(inputObj, context); // 2
 ```
 
@@ -645,4 +784,4 @@ for other functionality:
 
 ## License
 
-Rules Harvester uses an MIT license. Please refer to the license [here](LICENSE.md).
+Rule Harvester uses an MIT license. Please refer to the [license file](LICENSE.md) for more details.

@@ -12,7 +12,7 @@ module.exports = [
     name: 'buildOrderDispatch',
     handler(facts, context) {
       facts.orderDispatch = `Product: ${facts.product}
-Product Type: ${facts.type}
+Product Type: ${facts.productType}
 Shipping: ${facts.name}
           ${facts.shipping.street}
           ${facts.shipping.city}, ${facts.shipping.state} ${facts.shipping.zip}
