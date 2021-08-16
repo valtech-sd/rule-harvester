@@ -55,7 +55,13 @@ module.exports = [
                     name: 'process by state',
                     rules: [
                       {
-                        when: [{ closure: 'checkShippingState', state: 'FL' }],
+                        when: [
+                          {
+                            closure: 'checkShippingState',
+                            '^orderShippingState': 'shipping.state',
+                            state: 'FL',
+                          },
+                        ],
                         then: [
                           {
                             closure: 'setSalesTaxPercentage',
@@ -64,7 +70,13 @@ module.exports = [
                         ],
                       },
                       {
-                        when: [{ closure: 'checkShippingState', state: 'CA' }],
+                        when: [
+                          {
+                            closure: 'checkShippingState',
+                            '^orderShippingState': 'shipping.state',
+                            state: 'CA',
+                          },
+                        ],
                         then: [
                           {
                             closure: 'setSalesTaxPercentage',

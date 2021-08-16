@@ -264,6 +264,38 @@ be called and passed the **value** of your Facts object for the property `produc
 closure, as the name implies, returns true/false based on the equality of the two passed values (in this case a string
 and the value held by the productType property.)
 
+Here is another example of a rule and its corresponding closure:
+
+```javascript
+when: [
+   {
+      closure: 'checkShippingState',
+      '^orderShippingState': 'shipping.state',
+      state: 'CA',
+   },
+]
+```
+
+In the above, the `checkShippingState` closure (declared in /rule_closures/conditions.js) will be called and passed the 
+de-referenced **value** of your Facts object for the property `shipping.state`. It is also passed a string ('CA' in this 
+case). 
+
+Here is the corresponding closure:
+
+```javascript
+  {
+    name: 'checkShippingState',
+    handler(facts, context) {
+      return context.parameters.orderShippingState === context.parameters.state;
+    },
+    options: { required: ['orderShippingState', 'state'] },
+  }
+```
+
+The `checkShippingState` closure compares the two passed values (passed via the parameters `orderShippingState` and 
+`state`) and returns true if they're equal. The effect is that if a particular's order `shipping.state` matches
+the passed state, then the closure returns true.
+
 ##### Deep De-referencing With Objects
 
 The following is an example of deep de-referencing with an object. Notice how the top level salesArguments must have a

@@ -30,15 +30,12 @@ module.exports = [
     /**
      * checkShippingAddress
      * @param type
-     * @return boolean - true if not matching type
+     * @return boolean - true the two parameters passed match!
      **/
     name: 'checkShippingState',
     handler(facts, context) {
-      return (
-        _.get(facts, 'shipping.state', context.parameters.state) ===
-        context.parameters.state
-      );
+      return context.parameters.orderShippingState === context.parameters.state;
     },
-    options: { required: ['state'] },
+    options: { required: ['orderShippingState', 'state'] },
   },
 ];
