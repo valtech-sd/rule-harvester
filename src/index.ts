@@ -32,10 +32,13 @@ export * from './types';
 
 export * from './generators';
 
-// Export Core, Both as a single export and as individuals for flexibility
+// Export Core Closures, Both as a single export and as individuals for flexibility
 export { default as CoreClosures } from './core/closures/index';
 export { default as CoreConditionals } from './core/closures/conditionals';
 export { default as CoreTransformations } from './core/closures/transformations';
+
+// Export Core Inputs, individually since these are pick-and-choose
+export { default as AmqpInputProvider } from './core/inputs/amqp-input';
 
 export default class RuleHarvester {
   providers: IRuleHarvesterProviders;

@@ -20,7 +20,8 @@
   "dependencies": {
     "lodash": "^4.17.21",
     "log4js": "^6.3.0",
-    "rules-js": "^1.0.0"
+    "rules-js": "^1.0.0",
+    "amqp-cacoon": "^2.0.0"
   },
   "author": "Valtech: Daniel Morris",
   "license": "MIT",
