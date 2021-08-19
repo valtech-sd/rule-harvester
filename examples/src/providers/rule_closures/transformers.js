@@ -1,7 +1,43 @@
 const _ = require('lodash');
 
-// These are just example closures to transform the data
+// These are example closures to transform the facts object
+
 module.exports = [
+  {
+    /**
+     * reformat-amqp-message
+     * Reformat an incoming AMQP Message by pulling all the message "properties"
+     * into the root of the facts object. Why? So we can use the same rules we use for the Directory Watcher Input.
+     * @param - facts
+     * @param - context
+     * @return - facts, updated.
+     **/
+    name: 'reformat-amqp-message',
+    async handler(facts, context) {
+      // The AMQP Input gives us a special object. Check to see if this facts object is an AMQP input.
+      // If the facts object is not an AMQP input, we don't need to do any work!
+      if (facts.amqpMessageContent) {
+        try {
+          // We have an amqpMessage so let's do some work to reformat it to make it
+          // easier to process with the rules that also process the Directory Watcher Input.
+          // First, we parse the JSON into an object.
+          const messageContent = JSON.parse(facts.amqpMessageContent);
+          // Next, we parse out the properties of the messageContent into the root of the facts to imitate the
+          // same structure we receive from the Directory Watcher Input and so
+          // we don't have to keep reaching into amqpMessageContent each time we want to pull a value.
+          facts = _.merge(facts, messageContent)
+        } catch (e) {
+          // Yikes. Something failed, so we throw the special 'MessageValidationError' that the AMQP Input expects
+          // to indicate a malformed message.
+          const messageValidationError = new Error(e.message);
+          messageValidationError.name = 'MessageValidationError';
+          throw messageValidationError;
+        }
+      }
+      // Return the changed object (or if it was not an AMQP input, we just return the same facts we received).
+      return facts;
+    },
+  },
   {
     /**
      * setSalesTaxPercentage
@@ -92,12 +128,18 @@ module.exports = [
   {
     /**
      * validateOrder
-     * example {closure: "validateOrder"} - If the order passes validation
+     * example {closure: "validateOrder"} - Checks the order to ensure it's valid. Also will JSON.parse().
      * @param type
-     * @return boolean - true if the order passes validation
+     * @return facts - returns the modified facts
      **/
     name: 'validateOrder',
     handler(facts, context) {
+      // Check to see if we have to JSON Parse first (since we could have received a basic string, for example
+      // with the AMQP Input!)
+      if (typeof facts !== 'object') {
+        // We do need to parse facts into an object!
+        facts = JSON.parse(facts);
+      }
       // Check that an order has all the required properties.
       // Note, this is better done with JSON Schema but we're just doing a conditional here!
       facts.orderIsValid =

@@ -4,6 +4,33 @@ const _ = require('lodash');
 module.exports = [
   {
     /**
+     * invalidOrderFile
+     * example {closure: "invalidOrderFile"} - If the order file is not even valid
+     * @param type
+     * @return boolean - true if the order data is not valid JSON
+     **/
+    name: 'invalidOrderFile',
+    handler(facts, context) {
+      try {
+        // The Directory Watcher Input just gives us "the order" and the input already
+        // ensures it's JSON. So we don't need to repeat.
+
+        // However, the AMQP Input gives us a special object and the property that
+        // holds our message amqpMessageContent could contain anything - even non JSON!
+        if (facts.amqpMessageContent) {
+          // We have an amqpMessage so let's verify the message is valid JSON.
+          // This will THROW if we can't parse the JSON inside the amqp message content.
+          JSON.parse(facts.amqpMessageContent);
+          // Note that another closure will take care of reformatting the message!
+        }
+        return false;
+      } catch (ex) {
+        return true;
+      }
+    },
+  },
+  {
+    /**
      * orderIsValid
      * example {closure: "orderIsValid"} - If the order is Valid
      * @param type

@@ -4,7 +4,8 @@
   "description": "An example for using rule harvester",
   "main": "build/index.js",
   "scripts": {
-    "start": "node src/index.js",
+    "start": "node src/example-directory-watcher-input.js",
+    "start-amqp": "node src/example-amqp-input.js",
     "start:dev": "nodemon",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -12,7 +13,6 @@
     "@types/lodash": "^4.14.149",
     "chokidar": "^3.3.1",
     "lodash": "^4.17.15",
-    "log4js": "^6.1.0",
     "rule-harvester": "file:.."
   },
   "devDependencies": {

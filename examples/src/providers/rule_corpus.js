@@ -7,8 +7,20 @@ module.exports = [
     name: 'Validate the incoming order',
     rules: [
       {
+        when: 'invalidOrderFile',
+        then: [
+          {
+            closure: 'throw-message-validation-error',
+            errorMessage: 'Invalid JSON!',
+          },
+        ],
+      },
+      {
         when: 'always',
-        then: [{ closure: 'validateOrder' }],
+        then: [
+          { closure: 'reformat-amqp-message' },
+          { closure: 'validateOrder' },
+        ],
       },
     ],
   },

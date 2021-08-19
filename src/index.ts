@@ -36,9 +36,10 @@ export * from './generators';
 export { default as CoreClosures } from './core/closures/index';
 export { default as CoreConditionals } from './core/closures/conditionals';
 export { default as CoreTransformations } from './core/closures/transformations';
+export { default as CoreErrorHandling } from './core/closures/error-handling';
 
 // Export Core Inputs, individually since these are pick-and-choose
-export { default as AmqpInputProvider } from './core/inputs/amqp-input';
+export { default as CoreInputAmqp, ICoreInputAmqpProviderOptions } from './core/inputs/amqp-input';
 
 export default class RuleHarvester {
   providers: IRuleHarvesterProviders;
@@ -62,7 +63,7 @@ export default class RuleHarvester {
 
   /**
    * dereferenceString
-   * // TODO: Add a good comment about dereferenceString
+   * Pulls a property from facts determined by the path in param.
    * @param facts
    * @param param
    */
@@ -72,7 +73,7 @@ export default class RuleHarvester {
 
   /**
    * dereferenceArray
-   * // TODO: Add a good comment about dereferenceArray
+   * Pulls an array from facts determined by the path in parameters.
    * @param facts
    * @param parameters
    */

@@ -3,6 +3,7 @@ const {
   CoreClosures,
   CoreTransformations,
   CoreConditionals,
+  CoreErrorHandling,
 } = require('rule-harvester');
 
 // Bring our own custom conditions, transformers and actions
@@ -15,6 +16,7 @@ module.exports = [].concat(
   // Coming from the Rule-Harvester!
   CoreTransformations,
   CoreConditionals,
+  CoreErrorHandling,
   // Custom for the Example
   conditions,
   transformers,

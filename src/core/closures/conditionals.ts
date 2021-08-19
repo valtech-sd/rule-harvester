@@ -1,7 +1,6 @@
 import { IClosure } from '../../types';
 import { closureGenerator } from '../../generators';
 import _ from 'lodash';
-import CoreTransformations from "./transformations";
 
 // These are just example conditional closures
 const closures: IClosure[] = [

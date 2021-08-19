@@ -1,14 +1,18 @@
 import { IInputProvider } from '../../types';
-import AmqpCacoon, { ConsumeMessage, Channel } from 'amqp-cacoon';
+import AmqpCacoon, {ConsumeMessage, Channel, ChannelWrapper} from 'amqp-cacoon';
 import { Logger } from 'log4js';
 import _ from 'lodash';
+import { default as util } from 'util';
 
-export interface IRuleInputProviderAmqpConfig {
-  providers: {
-    logger: Logger;
-    amqpCacoon: AmqpCacoon;
-  };
-  amqpQueue: string;
+export interface ICoreInputAmqpProviderOptions {
+  requeueOnNack?: boolean,
+  inputContextCallback?: (msg: ConsumeMessage) => void,
+}
+
+export interface ICoreInputAmqpMessage {
+  amqpMessageContent: string,
+  amqpMessageFields: object,
+  amqpMessageProperties: object,
 }
 
 /**
@@ -21,26 +25,31 @@ export interface IRuleInputProviderAmqpConfig {
  * 3. When input comes in, the handler registered in step 2 will be called
  *
  **/
-export default class AmqpInputProvider implements IInputProvider {
-  private handlers: Array<(input: any) => Promise<any>>;
+export default class CoreInputAmqp implements IInputProvider {
+  private handler!: (input: any, context: any) => Promise<any>;
   private alreadyRegistered: boolean;
   private logger: Logger;
   private amqpCacoon: AmqpCacoon;
   private amqpQueue: string;
+  private options: ICoreInputAmqpProviderOptions;
 
   /**
    * constructor
    *
    * This function sets class level variables.
    *
-   * @param config - Contains the providers required
+   * @param amqpCacoon - an instance of AMQP Cacoon which will manage all AMQP communications.
+   * @param amqpQueue - a string with the name of the queue to consume from
+   * @param logger - a log4js logger instance to use for logging
+   * @param options - options for the behavior of the AMQP Input Provider
    **/
-  constructor(config: IRuleInputProviderAmqpConfig) {
+  constructor(amqpCacoon: AmqpCacoon, amqpQueue: string, logger: Logger, options: ICoreInputAmqpProviderOptions) {
     this.alreadyRegistered = false;
-    this.handlers = [];
-    // Deconstruct the config to local class variables
-    ({ logger: this.logger, amqpCacoon: this.amqpCacoon } = config.providers);
-    this.amqpQueue = config.amqpQueue;
+    // Save the constructor parameters to local class variables
+    this.logger = logger;
+    this.amqpCacoon = amqpCacoon;
+    this.amqpQueue = amqpQueue;
+    this.options = options;
   }
 
   /**
@@ -51,13 +60,14 @@ export default class AmqpInputProvider implements IInputProvider {
    * 2. If this is the first call then we register the amqpHandler function with the amqp provider
    * *  If not the first call then we do nothing else
    *
-   * @param applyInputCb - a handler that will be called when there is input
+   * @param applyInputCb - a handler that will be called when there is input. It should be passed input and context.
    * @returns Promise<void>
    **/
-  async registerInput(applyInputCb: (input: any) => Promise<any>) {
+  async registerInput(applyInputCb: (input: any, context: any) => Promise<any>) {
     this.logger.trace(`RuleInputProviderAmqp.registerHandler: Start`);
-    // Push applyInputCb onto the handler array
-    this.handlers.push(applyInputCb);
+
+    // Link applyInputCb to a class property we can reference later
+    this.handler = applyInputCb;
 
     if (!this.alreadyRegistered) {
       // Register the local handler with the amqp provider
@@ -75,49 +85,62 @@ export default class AmqpInputProvider implements IInputProvider {
    * This function loops through the handlers registered and passes
    * the amqp message to our local registered handlers as a message.
    *
-   * @param channel: the active/open AMQP channel to consume from
-   * @param msg: object - the message object
+   * @param channel: the active/open AMQP channel (inside a ChannelWrapper from node-amqp-connection-manager) to consume from.
+   * @param msg: object - the message object, ConsumeMessage type.
    * @return Promise<void>
    **/
-  async amqpHandler(channel: Channel, msg: ConsumeMessage) {
+  async amqpHandler(channel: ChannelWrapper, msg: ConsumeMessage) {
     this.logger.trace(`RuleInputProviderAmqp.amqpHandler: Start`);
     try {
-      let msgObj: any = { content: JSON.parse(msg.content.toString()) };
-      ({ exchange: msgObj.exchange, routingKey: msgObj.routingKey } = msg.fields);
+      // Create an object for our message - note we DO NOT validate the message here at all!
+      // It will be set to a string with whatever. it's the responsibility of the application
+      // using this Input to validate and THROW an error with the name 'MessageValidationError'
+      // which this method will catch and treat differently!
+      let amqpMessage: ICoreInputAmqpMessage = {
+        amqpMessageContent: msg.content.toString(),
+        amqpMessageFields: msg.fields,
+        amqpMessageProperties: msg.properties
+      };
 
-      // Find original routingKey
-      msgObj.originalRoutingKey =
-        ((_.get(msg, 'properties.headers.x-death') || []).find(
-          (o: any) => (o || {}).queue === _.get(msg, 'properties.headers.x-first-death-queue'),
-        ) || { 'routing-keys': [] })['routing-keys']![0] || msgObj.routingKey;
+      // And an object for our context
+      let context: any = {};
 
-      // Find original exchange
-      msgObj.originalExchange = _.get(msg, 'properties.headers.x-first-death-exchange');
-
-      msgObj.properties = msg.properties;
-
-      this.logger.trace('RuleInputProviderAmqp.amqpHandler() - Message: ', msgObj);
-      this.logger.info(`---------Message Topic Rx: ${msgObj.routingKey} - Original: ${msgObj.originalRoutingKey}`);
-
-      // Loop through the handlers
-      for (let handler of this.handlers) {
-        // Call each handler with the message object
-        await handler({ message: msgObj });
+      // Call the inputContextCallback if we were passed one
+      if (this.options.inputContextCallback) {
+        context = _.merge(context, this.options.inputContextCallback(msg));
       }
+
+      this.logger.debug(`AmqpInputProvider.amqpHandler - amqpMessage: ${util.inspect(amqpMessage)}`);
+
+      // Call our handler with the message object
+      await this.handler(amqpMessage, context);
 
       // Ack the message
       channel.ack(msg);
+
     } catch (e) {
+      // Handle errors!
+
       // If this is a message validation error then we do not need to retry because this is not going to magically be fixed.
-      // TODO: Explain better why the need for a certain error here to ACK an invalid message.
-      // TODO: Replace a generic error with name == 'MessageValidationError' with something more generic.
+      // Note: Applications using this Input are expected to return an error name == 'MessageValidationError'
+      // to trigger this first condition! These messages, since they are invalid, are ACK so that they don't
+      // requeue forever! (They're expected to fail any retry, since they're invalid!)
       if (e.name === 'MessageValidationError') {
-        this.logger.error(`RuleInputProviderAmqp.amqpHandler: Validation Error: `, e);
+        this.logger.error(`AmqpInputProvider.amqpHandler: Validation Error: ${e.message}`);
+        this.logger.trace(`The message contained: ${msg.content.toString()}`)
+        this.logger.trace(`The message fields contained: ${util.inspect(msg.fields)}`)
+        this.logger.trace(`The message properties contained: ${util.inspect(msg.properties)}`)
+        // Since we're dealing with INVALID messages (as defined by the application using this Input) we
+        // ACK so we don't requeue the messages forever!
         channel.ack(msg);
       } else {
-        this.logger.error(`RuleInputProviderAmqp.amqpHandler - Will Nack Message - Error: `, e);
-        // Nack the message and do not requeue
-        channel.nack(msg, false, false);
+        // Otherwise, the error is something other than INVALID MESSAGE, so we deal with it.
+        this.logger.error(`AmqpInputProvider.amqpHandler - Will Nack Message - INNER ERROR: ${e.message}`);
+        // TODO: Implement a requeueHandler callback - it will get the ORIGINAL message and context since
+        //  we don't have access to the changed facts, and will control requeue more than just "same queue". It
+        //  should work in concert with requeueOnNack.
+        // Nack the message and requeue only based on the options passed to this input
+        channel.nack(msg, false, this.options.requeueOnNack || false);
       }
     }
     this.logger.trace(`RuleInputProviderAmqp.amqpHandler: End`);
