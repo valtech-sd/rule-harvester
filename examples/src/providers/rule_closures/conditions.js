@@ -18,7 +18,7 @@ module.exports = [
         // However, the AMQP Input gives us a special object and the property that
         // holds our message `amqpMessage`, and the message content `amqpMessageContent`,
         // could contain anything - even non JSON!
-        if (facts.amqpMessage.amqpMessageContent) {
+        if (facts.amqpMessage && facts.amqpMessage.amqpMessageContent) {
           // We have an amqpMessage so let's verify the amqpMessageContent is valid JSON.
           // This will THROW if we can't parse the JSON inside the amqp message content.
           JSON.parse(facts.amqpMessage.amqpMessageContent);
