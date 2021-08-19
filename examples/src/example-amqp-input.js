@@ -74,7 +74,7 @@ let amqpCacoon = new AmqpCacoon({
         autoDelete: true,
         durable: false,
       });
-      // Bund the new Exchange and Queue together
+      // Bind the new Exchange and Queue together
       await channel.bindQueue(
         amqpConfig.exampleQueue,
         amqpConfig.exampleExchange,
