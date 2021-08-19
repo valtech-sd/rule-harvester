@@ -41,6 +41,9 @@ export { default as CoreErrorHandling } from './core/closures/error-handling';
 // Export Core Inputs, individually since these are pick-and-choose
 export { default as CoreInputAmqp, ICoreInputAmqpProviderOptions } from './core/inputs/amqp-input';
 
+// Export Core Types that are shared by various components
+export { ICoreAmqpMessage } from './core/types/amqp-types';
+
 export default class RuleHarvester {
   providers: IRuleHarvesterProviders;
   config: IRuleHarvesterConfig;

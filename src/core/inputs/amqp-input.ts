@@ -1,4 +1,5 @@
 import { IInputProvider } from '../../types';
+import { ICoreAmqpMessage } from '../types/amqp-types';
 import AmqpCacoon, {ConsumeMessage, Channel, ChannelWrapper} from 'amqp-cacoon';
 import { Logger } from 'log4js';
 import _ from 'lodash';
@@ -7,12 +8,6 @@ import { default as util } from 'util';
 export interface ICoreInputAmqpProviderOptions {
   requeueOnNack?: boolean,
   inputContextCallback?: (msg: ConsumeMessage) => void,
-}
-
-export interface ICoreInputAmqpMessage {
-  amqpMessageContent: string,
-  amqpMessageFields: object,
-  amqpMessageProperties: object,
 }
 
 /**
@@ -96,7 +91,7 @@ export default class CoreInputAmqp implements IInputProvider {
       // It will be set to a string with whatever. it's the responsibility of the application
       // using this Input to validate and THROW an error with the name 'MessageValidationError'
       // which this method will catch and treat differently!
-      let amqpMessage: ICoreInputAmqpMessage = {
+      let amqpMessage: ICoreAmqpMessage = {
         amqpMessageContent: msg.content.toString(),
         amqpMessageFields: msg.fields,
         amqpMessageProperties: msg.properties
