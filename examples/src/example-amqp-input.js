@@ -3,14 +3,15 @@
  *
  * This example demonstrates how to use the AMQP Core Input in order to start a rules engine that
  * subscribes to a RabbitMQ AMQP Host and consumes messages published to a specific queue. It then
- * takes those messages and puts them through the rules engine and eventually one or more outputs.
+ * takes those messages and puts them through the rules engine and eventually generates one or more
+ * outputs.
  *
  * DEPENDENCIES:
- * The AMQP Core Input uses 2 other packages both of which should be installed into your project
+ * The AMQP Core Input uses 2 other packages, both of which should be installed into your project
  * when you install rule-harvester. These are:
  *
  * - AMQP Cacoon - is a package that manages connections to RabbitMQ.
- * - log4js - is a generic logger for NodeJS. See the file ./providers/custom_logger.js for a very
+ * - log4js - is a generic logger for NodeJS. See the file ./providers/custom_logger.js for a basic
  *   example of log4js as a replacement to console.log.
  *
  * IMPORTANT * IMPORTANT * IMPORTANT: BROKER AUTHENTICATION AND TLS
@@ -56,12 +57,12 @@ let amqpCacoon = new AmqpCacoon({
     logger: logger,
   },
   // Important - onChannelConnect will ensure a certain configuration exists in RMQ.
-  // This might not be needed in environments where RMQ is setup by some other process!
+  // This might not be needed in environments where RMQ is set up by some other process!
   onChannelConnect: async (channel) => {
     try {
       // Notice all of these are done in sequence with AWAIT. This is so that each
       // operation can depend on the prior operation having finished. This is important
-      // when binding Queues to Exchanges, for example because you need both the
+      // when binding Queues to Exchanges, for example, because you need both the
       // Exchange and Queue to exist prior to trying to bind them together.
 
       // Make sure we have our example queue
@@ -90,7 +91,7 @@ let amqpCacoon = new AmqpCacoon({
   },
 });
 
-// Next, setup some options for the AMQP Input Provider. Each option is explained in the comments above it.
+// Next, set up some options for the AMQP Input Provider. Each option is explained in the comments above it.
 const coreInputAmqpProviderOptions = {
   // When messages go NACK, do we want to ReQueue them? (For now, setting this to true will requeue the messages
   // into the same queue! We have a ROADMAP item to support more flexible re-queueing.
