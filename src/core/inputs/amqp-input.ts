@@ -11,9 +11,10 @@ export interface ICoreInputAmqpProviderOptions {
 }
 
 /**
- * RuleInputProviderAmqp
+ * Rule Input Provider Amqp
  *
- * This class essentially converts the AmqpCacoon to a rule input provider
+ * This class wires up the AmqpCacoon to a rule input provider.
+ *
  * Usage:
  * 1. Instantiate the class and pass in the instantiated amqpCacoon and logger
  * 2. call registerHandler to register the input callback
@@ -34,9 +35,9 @@ export default class CoreInputAmqp implements IInputProvider {
    * This function sets class level variables.
    *
    * @param amqpCacoon - an instance of AMQP Cacoon which will manage all AMQP communications.
-   * @param amqpQueue - a string with the name of the queue to consume from
-   * @param logger - a log4js logger instance to use for logging
-   * @param options - options for the behavior of the AMQP Input Provider
+   * @param amqpQueue - a string with the name of the queue to consume from.
+   * @param logger - a log4js logger instance to use for logging.
+   * @param options - options for the behavior of the provider.
    **/
   constructor(amqpCacoon: AmqpCacoon, amqpQueue: string, logger: Logger, options: ICoreInputAmqpProviderOptions) {
     this.alreadyRegistered = false;
@@ -51,7 +52,7 @@ export default class CoreInputAmqp implements IInputProvider {
    * registerHandler
    *
    * Does this by...
-   * 1. Pushes the handler param onto a handlers array
+   * 1. Points the passed in applyInputCb to a class instance handler
    * 2. If this is the first call then we register the amqpHandler function with the amqp provider
    * *  If not the first call then we do nothing else
    *
@@ -79,6 +80,12 @@ export default class CoreInputAmqp implements IInputProvider {
    * This is the function that we register with the amqpCacoon.
    * This function loops through the handlers registered and passes
    * the amqp message to our local registered handlers as a message.
+   *
+   * Note tha this INPUT provider adds a SPECIFIC object into facts with property amqpMessage.
+   * amqpMessage in turn has three objects:
+   * - amqpMessageContent: a string containing the AMQP message content.
+   * - amqpMessageFields: an object, the amqp fields object.
+   * - amqpMessageProperties: an object, the amqp properties object.
    *
    * @param channel: the active/open AMQP channel (inside a ChannelWrapper from node-amqp-connection-manager) to consume from.
    * @param msg: object - the message object, ConsumeMessage type.
@@ -108,7 +115,7 @@ export default class CoreInputAmqp implements IInputProvider {
       this.logger.debug(`AmqpInputProvider.amqpHandler - amqpMessage: ${util.inspect(amqpMessage)}`);
 
       // Call our handler with the message object
-      await this.handler(amqpMessage, context);
+      await this.handler({amqpMessage: amqpMessage}, context);
 
       // Ack the message
       channel.ack(msg);

@@ -16,11 +16,12 @@ module.exports = [
         // ensures it's JSON. So we don't need to repeat.
 
         // However, the AMQP Input gives us a special object and the property that
-        // holds our message amqpMessageContent could contain anything - even non JSON!
-        if (facts.amqpMessageContent) {
-          // We have an amqpMessage so let's verify the message is valid JSON.
+        // holds our message `amqpMessage`, and the message content `amqpMessageContent`,
+        // could contain anything - even non JSON!
+        if (facts.amqpMessage.amqpMessageContent) {
+          // We have an amqpMessage so let's verify the amqpMessageContent is valid JSON.
           // This will THROW if we can't parse the JSON inside the amqp message content.
-          JSON.parse(facts.amqpMessageContent);
+          JSON.parse(facts.amqpMessage.amqpMessageContent);
           // Note that another closure will take care of reformatting the message!
         }
         return false;

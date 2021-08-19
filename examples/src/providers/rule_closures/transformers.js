@@ -16,12 +16,12 @@ module.exports = [
     async handler(facts, context) {
       // The AMQP Input gives us a special object. Check to see if this facts object is an AMQP input.
       // If the facts object is not an AMQP input, we don't need to do any work!
-      if (facts.amqpMessageContent) {
+      if (facts.amqpMessage) {
         try {
           // We have an amqpMessage so let's do some work to reformat it to make it
           // easier to process with the rules that also process the Directory Watcher Input.
-          // First, we parse the JSON into an object.
-          const messageContent = JSON.parse(facts.amqpMessageContent);
+          // First, we parse amqpMessageContent, which we expect to be JSON, into an object.
+          const messageContent = JSON.parse(facts.amqpMessage.amqpMessageContent);
           // Next, we parse out the properties of the messageContent into the root of the facts to imitate the
           // same structure we receive from the Directory Watcher Input and so
           // we don't have to keep reaching into amqpMessageContent each time we want to pull a value.
