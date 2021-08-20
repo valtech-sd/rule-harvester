@@ -107,7 +107,6 @@ let amqpCacoon = new AmqpCacoon({
 // Next we put all the pieces together into a new instance of CoreInputAmqp
 const coreOutputAmqpProvider = new CoreOutputAmqp(
   amqpCacoon, // Our amqpCacoon object manages RMQ connections
-  amqpConfig.exampleExchangeOutput, // This is the EXCHANGE you're going to be publishing into
   logger // This is the logger the libraries will use when logging anything.
   // Note it has to be a log4js logger!
 );

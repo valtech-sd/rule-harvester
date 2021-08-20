@@ -24,7 +24,6 @@ export default class CoreOutputAmqp implements IOutputProvider {
   private alreadyRegistered: boolean;
   private logger: Logger;
   private amqpCacoon: AmqpCacoon;
-  private amqpExchange: string;
   private amqpPublishChannelWrapper!: ChannelWrapper;
 
   /**
@@ -33,16 +32,13 @@ export default class CoreOutputAmqp implements IOutputProvider {
    * This function sets class level variables.
    *
    * @param amqpCacoon - an instance of AMQP Cacoon which will manage all AMQP communications.
-   * @param amqpExchange - the exchange that will be published into.
    * @param logger - a log4js logger instance to use for logging.
-   * @param options - options for the behavior of the provider.
    **/
-  constructor(amqpCacoon: AmqpCacoon, amqpExchange: string, logger: Logger) {
+  constructor(amqpCacoon: AmqpCacoon, logger: Logger) {
     this.alreadyRegistered = false;
     // Save the constructor parameters to local class variables
     this.logger = logger;
     this.amqpCacoon = amqpCacoon;
-    this.amqpExchange = amqpExchange;
   }
 
   /**
@@ -58,7 +54,8 @@ export default class CoreOutputAmqp implements IOutputProvider {
    *
    * <ICoreAmqpPublishAction>
    * A rules engine implementation that wants to use the Core AMQP Output should pass the special object
-   * amqpPublishAction as part of the facts object. That object in turn should contain the following:
+   * amqpPublishAction as part of the facts object. That object in turn should contain the following, either as
+   * a single instance OR as an ARRAY of these:
    * - amqpMessageContent: string - The content of the message, which should already be a string. Applications should
    *   JSON.stringify before passing.
    * - amqpPublishRoutingKey?: string - Optional, a routing key to use when publishing the message into the Exchange.
@@ -91,25 +88,41 @@ export default class CoreOutputAmqp implements IOutputProvider {
             result.error
           )}`
         );
-      } else if (result.facts && result.facts.amqpPublishAction) {
-        // No error + we have an amqpPublishAction so we publish!
-        const amqpPublishAction = result.facts.amqpPublishAction;
-        const amqpPublishRoutingKey =
-          amqpPublishAction.amqpPublishRoutingKey || '';
-        const amqpMessageContent = amqpPublishAction.amqpMessageContent || '';
-        const amqpPublishOptions = amqpPublishAction.amqpPublishOptions;
+      } else if (result?.facts?.amqpPublishAction) {
+        // No error + we have an facts.amqpPublishAction so we publish!
 
-        // Publish!
-        await this.amqpPublishChannelWrapper.publish(
-          this.amqpExchange,
-          amqpPublishRoutingKey,
-          Buffer.from(amqpMessageContent),
-          amqpPublishOptions
-        );
-        // Log success
-        this.logger.info(
-          `CoreOutputAmqp.outputResult: Message published to exchange='${this.amqpExchange}' with routingKey='${amqpPublishRoutingKey}'.`
-        );
+        // Setup an array of actions so we can handle multiple.
+        let amqpPublishArray: Array<ICoreAmqpPublishAction> = [];
+
+        // Were we passed an ARRAY of amqpPublishAction in facts.amqpPublishAction?
+        if (Array.isArray(result.facts.amqpPublishAction)) {
+          // It is an array, so we just set our local to the array we were passed
+          amqpPublishArray = result.facts.amqpPublishAction;
+        } else {
+          // Not an array, so let's add the one action into our local array
+          amqpPublishArray.push(result.facts.amqpPublishAction);
+        }
+
+        // Now, let's loop over the array and publish each
+        for (let amqpPublishAction of amqpPublishArray) {
+          const amqpPublishExchange = amqpPublishAction.amqpPublishExchange;
+          const amqpPublishRoutingKey =
+            amqpPublishAction.amqpPublishRoutingKey || '';
+          const amqpMessageContent = amqpPublishAction.amqpMessageContent || '';
+          const amqpPublishOptions = amqpPublishAction.amqpPublishOptions;
+
+          // Publish!
+          await this.amqpPublishChannelWrapper.publish(
+            amqpPublishExchange,
+            amqpPublishRoutingKey,
+            Buffer.from(amqpMessageContent),
+            amqpPublishOptions
+          );
+          // Log success
+          this.logger.info(
+            `CoreOutputAmqp.outputResult: Message published to exchange='${amqpPublishExchange}' with routingKey='${amqpPublishRoutingKey}'.`
+          );
+        }
       } else {
         // We don't have an amqpPublishAction, so we log that.
         this.logger.error(
