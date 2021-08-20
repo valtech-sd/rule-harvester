@@ -112,6 +112,7 @@ module.exports = [
                   { closure: 'calculateTaxes' },
                   { closure: 'calculateTotalPrice' },
                   { closure: 'buildOrderDispatch' },
+                  { closure: 'prepareAmqpPublishAction' },
                 ],
               },
             ],
@@ -126,7 +127,10 @@ module.exports = [
     rules: [
       {
         when: 'orderIsNotValid',
-        then: [{ closure: 'buildOrderDispatch_InvalidOrder' }],
+        then: [
+          { closure: 'buildOrderDispatch_InvalidOrder' },
+          { closure: 'prepareAmqpPublishAction' },
+        ],
       },
     ],
   },

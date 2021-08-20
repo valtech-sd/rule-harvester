@@ -1,5 +1,6 @@
 import {
   IInputProvider,
+  IOutputResult,
   IOutputProvider,
   ICorpusRuleGroup,
   IClosure,
@@ -39,10 +40,16 @@ export { default as CoreTransformations } from './core/closures/transformations'
 export { default as CoreErrorHandling } from './core/closures/error-handling';
 
 // Export Core Inputs, individually since these are pick-and-choose
-export { default as CoreInputAmqp, ICoreInputAmqpProviderOptions } from './core/inputs/amqp-input';
+export {
+  default as CoreInputAmqp,
+  ICoreInputAmqpProviderOptions,
+} from './core/inputs/amqp-input';
+
+// Export Core Output, individually since these are pick-and-choose
+export { default as CoreOutputAmqp } from './core/outputs/amqp-output';
 
 // Export Core Types that are shared by various components
-export { ICoreAmqpMessage } from './core/types/amqp-types';
+export * from './core/types/amqp-types';
 
 export default class RuleHarvester {
   providers: IRuleHarvesterProviders;
@@ -52,7 +59,7 @@ export default class RuleHarvester {
   fieldDereferenceChar: string = '^';
   ruleGroups: string[];
   extraContext?: object | null;
-  forbidenExtraContext: string[] = [
+  forbiddenExtraContext: string[] = [
     'engine',
     'parameters',
     'rulesFired',
@@ -112,14 +119,14 @@ export default class RuleHarvester {
   }
 
   /**
-    * dereferenceObject
-    * Used to dereference fields within an object. A field is de-referenced if the key begins with a "^"
-    * Call dereferenceSingleValue which does the following
-    * - If values are string then get path from facts object
-    * - If value is an object then call this recursively
-    * - If value is an array then call dereferenceArray
-    *   - dereferenceArray uses the leading character of the value to determine if something should be de-referenced or not
-    */
+   * dereferenceObject
+   * Used to dereference fields within an object. A field is de-referenced if the key begins with a "^"
+   * Call dereferenceSingleValue which does the following
+   * - If values are string then get path from facts object
+   * - If value is an object then call this recursively
+   * - If value is an array then call dereferenceArray
+   *   - dereferenceArray uses the leading character of the value to determine if something should be de-referenced or not
+   */
   dereferenceObject(facts: any, parameters: any) {
     let parameterKeys = Object.keys(parameters || {});
     for (let i = 0; i < parameterKeys.length; i++) {
@@ -153,17 +160,15 @@ export default class RuleHarvester {
       // so extraContext cannot override fields that are already defined.
       let result: any;
       try {
-        // Parse thisRunContext outof facts
+        // Parse thisRunContext out of facts
         let thisRunContext =
           factsAndOrRunContext?.thisRunContext_RuleHarvesterWrapped;
         let facts;
-        
-        const isClosureParameterDirectCall = !factsAndOrRunContext?.thisRunContext_RuleHarvesterWrapped;
+
+        const isClosureParameterDirectCall =
+          !factsAndOrRunContext?.thisRunContext_RuleHarvesterWrapped;
         // This is to fix a bug for some edge cases where it gets to this wrapper from rules-js function.process(facts,context) calls
-        if (
-          thisRunContext ||
-          factsAndOrRunContext.facts_RuleHarvesterWrapped
-        ) {
+        if (thisRunContext || factsAndOrRunContext.facts_RuleHarvesterWrapped) {
           facts = factsAndOrRunContext?.facts_RuleHarvesterWrapped;
           context.rulesFired.thisRunContext_RuleHarvesterWrapped =
             thisRunContext;
@@ -181,7 +186,10 @@ export default class RuleHarvester {
         contextExt.closureName = name;
         contextExt.closureOptions = options;
 
-        contextExt.parameters = this.dereferenceObject(facts, _.cloneDeep(contextExt.parameters));
+        contextExt.parameters = this.dereferenceObject(
+          facts,
+          _.cloneDeep(contextExt.parameters)
+        );
         // let parameterKeys = Object.keys(contextExt.parameters || {});
         // for (let i = 0; i < parameterKeys.length; i++) {
         //   const key = parameterKeys[i];
@@ -196,7 +204,7 @@ export default class RuleHarvester {
         // }
 
         result = this.config.closureHandlerWrapper // closureHandlerWrapper exist
-          ? await this.config.closureHandlerWrapper(facts, contextExt, handler) // then call wrapper funtion
+          ? await this.config.closureHandlerWrapper(facts, contextExt, handler) // then call wrapper function
           : await handler(facts, contextExt); // else call handler directly
 
         // If result is undefined then skip this line
@@ -273,7 +281,7 @@ export default class RuleHarvester {
       // Make sure extraContext is not using forbidden fields
       let badContext = _.intersection(
         _.keys(this.extraContext),
-        this.forbidenExtraContext
+        this.forbiddenExtraContext
       );
       if ((badContext || []).length > 0) {
         throw new Error(
@@ -330,13 +338,13 @@ export default class RuleHarvester {
    * 2. Run setup input provider to initialize the rules engine
    * NOTE: Setup is purposely run after registerInput because the input provider should be able to modify the corpus
    * or configuration during setup
-   * 
+   *
    * @params - None
    * @returns void
    **/
   start() {
     // We bind to the applyRule to this because otherwise the calling context would
-    // be from the input provider insetad of the local class
+    // be from the input provider instead of the local class
     for (let ruleInput of this.providers.inputs) {
       ruleInput.registerInput(this.applyRule.bind(this), this.config);
     }
@@ -362,8 +370,8 @@ export default class RuleHarvester {
         let ruleGroups = ruleGroupOverrides || this.ruleGroups;
         ruleGroups = typeof ruleGroups === 'string' ? [ruleGroups] : ruleGroups;
         for (group of ruleGroups) {
-          // Loop over grouops and set the fact from previous
-          // rules group to the input fact for the next rules grup
+          // Loop over groups and set the fact from previous
+          // rules group to the input fact for the next rules group
           // thisRunContext + fact is passed in as a single object
           // Our defaultClosureHandlerWrapper above will parse this out
           // and pass facts to the original handler and extend context with thisRunContext

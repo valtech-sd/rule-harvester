@@ -78,6 +78,22 @@ facts. In other cases, it may do an http REST call of some sort. An output provi
 function `outputResult({ facts, error, errorGroup })` where facts are the output modified facts after all rules
 have been processed.
 
+#### Core Outputs
+
+Rule Harvester includes a number of generic outputs that are useful in various use cases. These are referred to as
+Core Outputs. More will be added over time.
+
+The following Core Outputs are available:
+
+- CoreOutputAmqp - Allows for the publishing of the result of a rules engine pass into an AMQP broker. When a rules
+  pass `result` is received by this output, the output looks for an amqpPublishAction object. If found, it publishes to 
+  an Exchange following the details in that object, including being able to set a routing key and other AMQP publish
+  options. See the example **example-amqp-output.js** for detailed usage.
+
+The Rule Harvester maintainers expect to continually be adding to Core Outputs. Because of that, rather than trying
+to explain each of the outputs here, you are invited to check out the ./examples/ directory of this repo. Each
+core output is covered in an example.
+
 ### Closures
 
 Closures are functions that can be called from within a rule. All closures need to be defined by the calling system. 
@@ -835,8 +851,8 @@ for other functionality:
 
 ## Roadmap
 
-- Add a more flexible NACK with Re-Publish to the Core AMQP Input. See TODO in **amqp-input.ts**.
-- Consider JSON5 for rules and corpus.
+- (high priority) Add a more flexible NACK with Re-Publish to the Core AMQP Input. See TODO in **amqp-input.ts**.
+- (low priority) Consider JSON5 for rules and corpus.
 
 ## License
 

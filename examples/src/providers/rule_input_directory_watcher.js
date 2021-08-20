@@ -37,8 +37,5 @@ module.exports = class RuleInputProviderDirectoryWatcher {
       })
       .on('add', handleEvent);
 
-    logger.info(
-      'RuleHarvester Example started. Copy an example order file into ./examples/input_watch_path then view the output in ./examples/output_order_dispatch'
-    );
   }
 };

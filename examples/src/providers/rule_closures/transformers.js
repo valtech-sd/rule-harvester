@@ -16,6 +16,8 @@ module.exports = [
     async handler(facts, context) {
       // The AMQP Input gives us a special object. Check to see if this facts object is an AMQP input.
       // If the facts object is not an AMQP input, we don't need to do any work!
+      // Note, this is completely application specific. A rules corpus can easily just work with
+      // facts.amqpMessage!
       if (facts.amqpMessage) {
         try {
           // We have an amqpMessage so let's do some work to reformat it to make it

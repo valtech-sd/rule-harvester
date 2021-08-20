@@ -16,6 +16,6 @@ logger = log4js.getLogger('synchronous');
 // DEBUG - debug infos are logged
 // TRACE - traces are logged
 // ALL   - everything is logged
-logger.level = 'debug';
+logger.level = 'all';
 
 module.exports = logger;

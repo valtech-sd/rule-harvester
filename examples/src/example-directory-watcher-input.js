@@ -37,3 +37,8 @@ let rulesHarvester = new RulesHarvester({
 });
 
 rulesHarvester.start();
+
+logger.info(
+  'RuleHarvester Example DIRECTORY WATCHER started. Copy an example order file into ./examples/input_watch_path then view the output in ./examples/output_order_dispatch.'
+);
+

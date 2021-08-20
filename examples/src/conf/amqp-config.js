@@ -29,9 +29,11 @@ const amqpConfig = {
           ]
         : null,
   },
-  // Queue + Exchange that we'll be using
-  exampleQueue: 'example-queue',
-  exampleExchange: 'example-exchange',
+  // Queues + Exchanges that we'll be using for the examples
+  exampleQueue: 'example-input-queue',
+  exampleExchange: 'example-input-exchange',
+  exampleQueueOutput: 'example-output-queue',
+  exampleExchangeOutput: 'example-output-exchange',
 };
 
 module.exports = amqpConfig;
