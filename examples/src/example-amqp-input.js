@@ -152,3 +152,6 @@ rulesHarvester.start();
 logger.info(
   `RuleHarvester Example AMQP INPUT started. Send a order via a message into your broker's queue "${amqpConfig.exampleQueue}" then view the output in ./examples/output_order_dispatch.`
 );
+logger.info(
+  `An easy way to send messages is to open one of the example order files, then paste the contents into the RabbitMQ console. Under QUEUES, click into "${amqpConfig.exampleQueue}" and notice there is a publish message section. Paste the contents of one of the order files in there and click PUBLISH MESSAGE.`
+);

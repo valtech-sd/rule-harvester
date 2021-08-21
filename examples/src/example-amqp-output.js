@@ -148,3 +148,6 @@ rulesHarvester.start();
 logger.info(
   `RuleHarvester Example AMQP OUTPUT started. Copy an example order file into ./examples/input_watch_path then view the output in your broker's queues starting with '${amqpConfig.exampleQueueOutput}'.`
 );
+logger.info(
+  `An easy way to see messages is to open the RabbitMQ console. Under QUEUES, click into "${amqpConfig.exampleQueue}" and notice there is a GET MESSAGES section. Click that to pull out any messages in the queue.`
+);
