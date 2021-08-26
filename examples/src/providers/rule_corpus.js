@@ -7,8 +7,20 @@ module.exports = [
     name: 'Validate the incoming order',
     rules: [
       {
+        when: 'invalidOrderFile',
+        then: [
+          {
+            closure: 'throw-message-validation-error',
+            errorMessage: 'Invalid JSON!',
+          },
+        ],
+      },
+      {
         when: 'always',
-        then: [{ closure: 'validateOrder' }],
+        then: [
+          { closure: 'reformat-amqp-message' },
+          { closure: 'validateOrder' },
+        ],
       },
     ],
   },
@@ -100,6 +112,7 @@ module.exports = [
                   { closure: 'calculateTaxes' },
                   { closure: 'calculateTotalPrice' },
                   { closure: 'buildOrderDispatch' },
+                  { closure: 'prepareAmqpPublishAction' },
                 ],
               },
             ],
@@ -114,7 +127,10 @@ module.exports = [
     rules: [
       {
         when: 'orderIsNotValid',
-        then: [{ closure: 'buildOrderDispatch_InvalidOrder' }],
+        then: [
+          { closure: 'buildOrderDispatch_InvalidOrder' },
+          { closure: 'prepareAmqpPublishAction' },
+        ],
       },
     ],
   },

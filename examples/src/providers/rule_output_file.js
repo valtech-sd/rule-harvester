@@ -2,6 +2,7 @@ const fs = require('fs');
 const { promisify } = require('util');
 const writeFile = promisify(fs.writeFile);
 const path = require('path');
+const logger = require('./custom_logger');
 
 module.exports = class RuleOutputProviderFile {
   // The rules Harvester will call the outputResult function after it is done processing input
@@ -17,9 +18,9 @@ module.exports = class RuleOutputProviderFile {
         )}.txt`,
         facts.orderDispatch
       );
-      console.log('Facts At Completion', facts);
+      logger.debug('Facts At Completion', facts);
     } else {
-      console.error(
+      logger.error(
         'Output Provider - Error during provider run',
         error,
         errorGroup

@@ -5,13 +5,12 @@
 [![TypeScript](https://badges.frapsoft.com/typescript/code/typescript.svg)](https://github.com/ellerbrock/typescript-badges/)
 [![semantic-release](https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg)](https://github.com/semantic-release/semantic-release)
 
-
 ## Overview
 
 Rule Harvester is a general purpose rules engine. The rules engine receives an input and then processes rule definitions 
 against the input, changing that input along the way. Finally, the processed input is passed to an output.
 
-The rules engine comes with CORE INPUTS, OUTPUTS and CLOSURES but also supports custom inputs, outputs and closures to
+The rules engine includes CORE INPUTS, OUTPUTS and CLOSURES but also supports custom inputs, outputs and closures to
 suit any application's unique needs. 
 
 This package makes heavy use of [Rules.Js](https://github.com/bluealba/rules-js). We have a desire to use some specific 
@@ -57,12 +56,43 @@ context when calling closures. If the `runtimeContext` contains `{testValue: 1}`
 closure will contain `context.testvalue = 1`. This is useful for passing something like a specialty logger that needs to 
 log some sort of run specific context.
 
+#### Core Inputs
+
+Rule Harvester includes a number of generic inputs that are useful in various use cases. These are referred to as
+Core Inputs. More will be added over time.
+
+The following Core Inputs are available starting with version 2 of Rule Harvester:
+
+- CoreInputAmqp - Establishes a consumer connection to an AMQP Broker Host (RabbitMQ) on a specific Queue. When a message 
+  is received in this queue, the message is put through the rules engine. See the example **example-amqp-input.js** for 
+  detailed usage.
+
+The Rule Harvester maintainers expect to continually be adding to Core Inputs. Because of that, rather than trying
+to explain each of the inputs here, you are invited to check out the ./examples/ directory of this repo. Each
+core input is covered in an example.
+
 ### Outputs
 
 Outputs receive the final modified facts from the Rules Engine. In some cases it may write a file based on the output 
 facts. In other cases, it may do an http REST call of some sort. An output provider must contain the 
 function `outputResult({ facts, error, errorGroup })` where facts are the output modified facts after all rules
 have been processed.
+
+#### Core Outputs
+
+Rule Harvester includes a number of generic outputs that are useful in various use cases. These are referred to as
+Core Outputs. More will be added over time.
+
+The following Core Outputs are available:
+
+- CoreOutputAmqp - Allows for the publishing of the result of a rules engine pass into an AMQP broker. When a rules
+  pass `result` is received by this output, the output looks for an amqpPublishAction object. If found, it publishes to 
+  an Exchange following the details in that object, including being able to set a routing key and other AMQP publish
+  options. See the example **example-amqp-output.js** for detailed usage.
+
+The Rule Harvester maintainers expect to continually be adding to Core Outputs. Because of that, rather than trying
+to explain each of the outputs here, you are invited to check out the ./examples/ directory of this repo. Each
+core output is covered in an example.
 
 ### Closures
 
@@ -396,14 +426,15 @@ ruleHarvester.start()
 > **Note:** The above configuration does not include [Core Closures](#core-closures) provided by the rules engine. See the section
 > [Configuration example](#configuration-example) for how to include Core Closures.
 
-## Example
+## Example - Directory Watcher
 
 This repo provides a full example in the **examples** directory. The following are some snippets out of our example. 
 This example will process any JSON files located in `./examples/input_watch_path`. It will load the JSON and pass it 
 into the Rule Harvester. The Rule Harvester will calculate taxes and total price for the order then the output provider 
 will output a txt file in `./examples/output_order_dispatch` that will show the order details.
 
-> **Note:** The full example can be found in the `./examples` directory.
+> **Note:** The full example can be found in the `./examples` directory. Also, there are other examples in that 
+> directory that are not necessarily discussed here in full. Be sure to check out the `./examples` directory!
 
 To run the full example:
 1. Go to the example directory and run `npm i` to install packages.
@@ -818,9 +849,11 @@ for other functionality:
 // TODO: Add a description of how a certain Input can call for a specific named Rule Group.
 // TODO: Add as an example.
 
-## Roadmap
+## Roadmap TODO
 
-- Consider JSON5 for rules and corpus.
+- (high priority) Add a more flexible NACK with Re-Publish to the Core AMQP Input. See TODO in **amqp-input.ts**.
+- (medium) Add tests for Core Input AMQP, Core Output AMQP, Core Closures
+- (low priority) Consider JSON5 for rules and corpus.
 
 ## License
 

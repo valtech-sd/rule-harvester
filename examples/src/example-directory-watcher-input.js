@@ -1,9 +1,18 @@
+/**
+ * example-directory-watcher-input
+ *
+ * This example demonstrates how to create a custom input that watches for new files added to a directory.
+ * When it sees files, it then reads the contents and puts the data through the rules engine and eventually one or
+ * more outputs.
+ *
+ */
+
 const { default: RulesHarvester } = require('rule-harvester');
 const RuleInputProviderDirectoryWatcher = require('./providers/rule_input_directory_watcher');
 const RuleOutputProviderFile = require('./providers/rule_output_file');
 const ruleClosures = require('./providers/rule_closures');
 const ruleCorpus = require('./providers/rule_corpus');
-const logger = require('./providers/custom-logger');
+const logger = require('./providers/custom_logger');
 
 /**
  * This is an example of how to initialize and start the Rule Harvester.
@@ -28,3 +37,8 @@ let rulesHarvester = new RulesHarvester({
 });
 
 rulesHarvester.start();
+
+logger.info(
+  'RuleHarvester Example DIRECTORY WATCHER started. Copy an example order file into ./examples/input_watch_path then view the output in ./examples/output_order_dispatch.'
+);
+

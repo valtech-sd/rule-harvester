@@ -12,10 +12,18 @@ export interface IInputProvider {
   ): void;
 }
 
+// Define what we want Output Result to receive
+export interface IOutputResult {
+  facts: any;
+  error?: any;
+  errorGroup?: any;
+  context?: any;
+}
+
 // Interface for the rules output provider
 export interface IOutputProvider {
   // setup(settings: any): Promise<any>;
-  outputResult(result: any): Promise<any>;
+  outputResult(result: IOutputResult): Promise<any>;
 }
 
 export interface ICorpusRuleGroup {
