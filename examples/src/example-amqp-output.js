@@ -102,8 +102,8 @@ let amqpCacoon = new AmqpCacoon({
       await channel.bindQueue(
         `${amqpConfig.exampleQueueOutput}-online-orders`,
         amqpConfig.exampleExchangeOutput,
-        'online-orders' // Empty routing key to match anything published without one! (Messages published into this
-        // exchange without a routing key WILL be sent to the bound queue.
+        'online-orders' // Messages published to the exchange with this routing-key specifically will be sent
+        // this the "online-orders" queue.
       );
     } catch (ex) {
       logger.error(`onChannelConnect ERROR: ${util.inspect(ex.message)}`);
@@ -114,7 +114,7 @@ let amqpCacoon = new AmqpCacoon({
   },
 });
 
-// Next we put all the pieces together into a new instance of CoreInputAmqp
+// Next we put all the pieces together into a new instance of CoreOutputAmqp
 const coreOutputAmqpProvider = new CoreOutputAmqp(
   amqpCacoon, // Our amqpCacoon object manages RMQ connections
   logger // This is the logger the libraries will use when logging anything.
