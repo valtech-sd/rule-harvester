@@ -849,9 +849,10 @@ for other functionality:
 // TODO: Add a description of how a certain Input can call for a specific named Rule Group.
 // TODO: Add as an example.
 
-## Roadmap
+## Roadmap TODO
 
 - (high priority) Add a more flexible NACK with Re-Publish to the Core AMQP Input. See TODO in **amqp-input.ts**.
+- (medium) Add tests for Core Input AMQP, Core Output AMQP, Core Closures
 - (low priority) Consider JSON5 for rules and corpus.
 
 ## License

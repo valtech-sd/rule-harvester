@@ -12,11 +12,13 @@
     "resolveJsonModule": true,
     "forceConsistentCasingInFileNames": true,
     "declaration": true,
-    "sourceMap": true
+    "sourceMap": true,
+    "skipLibCheck": true,
   },
   "exclude": [
     "examples",
     "build",
-    "tests"
+    "tests",
+    "node_modules",
   ]
 }
