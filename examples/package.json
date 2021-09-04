@@ -12,6 +12,7 @@
   "dependencies": {
     "chokidar": "^3.5.2",
     "lodash": "^4.17.15",
+    "uuid": "^8.3.2",
     "rule-harvester": "file:.."
   },
   "devDependencies": {

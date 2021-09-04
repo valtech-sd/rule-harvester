@@ -14,7 +14,7 @@ const closures: IClosure[] = [
       error.name = context.parameters.errorName;
       throw error;
     },
-    { required: ['message'] },
+    { required: ['errorMessage'] },
   ),
   /**
    * message validation error
@@ -27,7 +27,7 @@ const closures: IClosure[] = [
       error.name = 'MessageValidationError';
       throw error;
     },
-    { required: ['message'] },
+    { required: ['errorMessage'] },
   ),
 ];
 

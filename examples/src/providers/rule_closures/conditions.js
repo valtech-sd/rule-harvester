@@ -32,6 +32,30 @@ module.exports = [
   },
   {
     /**
+     * invalidOrderHttpPost
+     * example {closure: "invalidOrderHttpPost"} - If the order post is not even valid
+     * @param type
+     * @return boolean - true if the order data is not valid JSON
+     **/
+    name: 'invalidOrderHttpPost',
+    handler(facts, context) {
+      try {
+        // The HTTP Input gives us a special object and the property that
+        // holds our request (httpRequest).
+        // httpRequest conforms to IProviderReq and contains:
+        // - method: (string) - GET, PUT, DELETE, etc.
+        // - body: (object) - The received BODY as an object.
+        // - query: (object) - An object that has all the query string items.
+        // - params?: (optional Array<string>) - This is the PATH of the request.
+        // Ensure the request: is a POST + has a BODY
+        return !(facts.httpRequest && facts.httpRequest.body && facts.httpRequest.method && facts.httpRequest.method === 'POST');
+      } catch (ex) {
+        return true;
+      }
+    },
+  },
+  {
+    /**
      * orderIsValid
      * example {closure: "orderIsValid"} - If the order is Valid
      * @param type

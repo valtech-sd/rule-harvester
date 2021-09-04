@@ -4,6 +4,7 @@
   "description": "RuleHarvester is a rules engine for javascript",
   "main": "build/index.js",
   "types": "build/index.d.ts",
+  "type": "commonjs",
   "files": [
     "build/**/*"
   ],
@@ -21,7 +22,8 @@
     "lodash": "^4.17.21",
     "log4js": "^6.3.0",
     "rules-js": "^1.0.0",
-    "amqp-cacoon": "^3.0.3"
+    "amqp-cacoon": "^3.0.3",
+    "coronado-bridge": "^2.0.0"
   },
   "author": "Valtech: Daniel Morris",
   "license": "MIT",
