@@ -4,6 +4,7 @@ const {
   CoreTransformations,
   CoreConditionals,
   CoreErrorHandling,
+  CoreErrorHandlingHttp,
 } = require('rule-harvester');
 
 // Bring our own custom conditions, transformers and actions
@@ -17,6 +18,7 @@ module.exports = [].concat(
   CoreTransformations,
   CoreConditionals,
   CoreErrorHandling,
+  CoreErrorHandlingHttp,
   // Custom for the Example
   conditions,
   transformers,

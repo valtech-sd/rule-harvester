@@ -38,6 +38,7 @@ export { default as CoreClosures } from './core/closures/index';
 export { default as CoreConditionals } from './core/closures/conditionals';
 export { default as CoreTransformations } from './core/closures/transformations';
 export { default as CoreErrorHandling } from './core/closures/error-handling';
+export { default as CoreErrorHandlingHttp } from './core/closures/error-handling-http';
 
 // Export Core Inputs, individually since these are pick-and-choose
 export {
@@ -45,12 +46,22 @@ export {
   ICoreInputAmqpProviderOptions,
 } from './core/inputs/amqp-input';
 
+export {
+  default as CoreInputHttp,
+  ICoreInputHttpProviderOptions,
+  CoreInputHttpResponseType,
+} from './core/inputs/http-input';
+
 // Export Core Output, individually since these are pick-and-choose
 export { default as CoreOutputAmqp } from './core/outputs/amqp-output';
 
 // Export Core Types that are shared by various components
+// AMQP
 export * from './core/types/amqp-types';
+// HTTP
+export * from './core/types/http-types';
 
+// Export RuleHarvester
 export default class RuleHarvester {
   providers: IRuleHarvesterProviders;
   config: IRuleHarvesterConfig;
@@ -421,8 +432,10 @@ export default class RuleHarvester {
 
       // If an error occurred we want to throw it back to the input provider
       if (error) {
+        // Throw the error to the input provider
         throw error;
       } else {
+        // Alternatively, if no error, we return the altered facts to the input provider also!
         return fact;
       }
     }

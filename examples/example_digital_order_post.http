@@ -1,0 +1,50 @@
+# curl --location --request POST 'http://localhost:3000'
+#--header 'Content-Type: application/json'
+#--data-raw '{
+#    "someJunk": 17
+#}'
+POST http://localhost:3000
+Content-Type: application/json
+
+{
+    "someJunk": 17
+}
+
+###
+
+# curl --location --request POST 'http://localhost:3000'
+#--header 'Content-Type: application/json'
+#--data-raw '{
+#    "product": "AwesomeEbookOfSomeSort",
+#    "shipping": {
+#        "street": "123 sweet st.",
+#        "city": "San Diego",
+#        "state": "CA",
+#        "zip": "12345"
+#    },
+#    "name": "Fred Jones",
+#    "email": "fred@testsite.com",
+#    "productType": "digital",
+#    "price": 240.00
+#}'
+POST http://localhost:3000
+Content-Type: application/json
+
+{
+    "product": "AwesomeEbookOfSomeSort",
+    "shipping": {
+        "street": "123 sweet st.",
+        "city": "San Diego",
+        "state": "CA",
+        "zip": "12345"
+    },
+    "name": "Fred Jones",
+    "email": "fred@testsite.com",
+    "productType": "digital",
+    "price": 240.00
+}
+
+###
+
+
+

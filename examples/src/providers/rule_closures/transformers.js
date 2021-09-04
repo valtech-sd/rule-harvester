@@ -1,4 +1,5 @@
 const _ = require('lodash');
+const { ICoreHttpError } = require('rule-harvester');
 
 // These are example closures to transform the facts object
 
@@ -23,17 +24,55 @@ module.exports = [
           // We have an amqpMessage so let's do some work to reformat it to make it
           // easier to process with the rules that also process the Directory Watcher Input.
           // First, we parse amqpMessageContent, which we expect to be JSON, into an object.
-          const messageContent = JSON.parse(facts.amqpMessage.amqpMessageContent);
+          const messageContent = JSON.parse(
+            facts.amqpMessage.amqpMessageContent
+          );
           // Next, we parse out the properties of the messageContent into the root of the facts to imitate the
           // same structure we receive from the Directory Watcher Input and so
           // we don't have to keep reaching into amqpMessageContent each time we want to pull a value.
-          facts = _.merge(facts, messageContent)
+          facts = _.merge(facts, messageContent);
         } catch (e) {
           // Yikes. Something failed, so we throw the special 'MessageValidationError' that the AMQP Input expects
           // to indicate a malformed message.
           const messageValidationError = new Error(e.message);
           messageValidationError.name = 'MessageValidationError';
           throw messageValidationError;
+        }
+      }
+      // Return the changed object (or if it was not an AMQP input, we just return the same facts we received).
+      return facts;
+    },
+  },
+  {
+    /**
+     * reformat-http-request
+     * Reformat an incoming http request by pulling all the request body into fact "properties"
+     * in the root of the facts object. Why? So we can use the same rules we use for the Directory Watcher Input.
+     * @param - facts
+     * @param - context
+     * @return - facts, updated.
+     **/
+    name: 'reformat-http-request',
+    async handler(facts, context) {
+      // The HTTP Input gives us a special object and the property that
+      // holds our request (httpRequest).
+      // httpRequest conforms to IProviderReq and contains:
+      // - method: (string) - GET, PUT, DELETE, etc.
+      // - body: (object) - The received BODY as an object.
+      // - query: (object) - An object that has all the query string items.
+      // - params?: (optional Array<string>) - This is the PATH of the request.
+      if (facts.httpRequest && facts.httpRequest.body) {
+        try {
+          // We have an httpRequest so let's do some work to reformat it to make it
+          // easier to process with the rules that also process the Directory Watcher Input.
+          // We parse out the properties of the messageContent into the root of the facts to imitate the
+          // same structure we receive from the Directory Watcher Input and so
+          // we don't have to keep reaching into httpRequest each time we want to pull a value.
+          facts = _.merge(facts, facts.httpRequest.body);
+        } catch (e) {
+          // Yikes. Something failed, so we throw the custom 'BridgeError' that the HTTP Input expects
+          // to indicate a malformed message.
+          throw new ICoreHttpError(500, e.message, 'reformat-http-request ERROR');
         }
       }
       // Return the changed object (or if it was not an AMQP input, we just return the same facts we received).

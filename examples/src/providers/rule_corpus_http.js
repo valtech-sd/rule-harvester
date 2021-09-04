@@ -1,5 +1,5 @@
 /**
- * This is an example rule corpus that processes orders
+ * This is an example rule corpus that processes orders received from an HTTP Input.
  **/
 
 module.exports = [
@@ -8,18 +8,21 @@ module.exports = [
     name: 'Validate the incoming order',
     rules: [
       {
-        when: 'invalidOrderFile',
+        // Note that we can throw an HTTP error back to the HTTP client easily from within the Corpus.
+        when: 'invalidOrderHttpPost',
         then: [
           {
-            closure: 'throw-message-validation-error',
-            errorMessage: 'Invalid JSON!',
+            closure: 'throw-http-error',
+            errorMessage: 'The request must be a POST with a request body.',
+            errorName: 'Bad Request',
+            httpStatusCode: 400,
           },
         ],
       },
       {
         when: 'always',
         then: [
-          { closure: 'reformat-amqp-message' },
+          { closure: 'reformat-http-request' },
           { closure: 'validateOrder' },
         ],
       },
@@ -113,7 +116,8 @@ module.exports = [
                   { closure: 'calculateTaxes' },
                   { closure: 'calculateTotalPrice' },
                   { closure: 'buildOrderDispatch' },
-                  { closure: 'prepareAmqpPublishAction' },
+                  // This coming closure is where we decide how we respond to the HTTP request (if at all)
+                  { closure: 'prepareHttpResponseAction' },
                 ],
               },
             ],
@@ -123,14 +127,20 @@ module.exports = [
     ],
   },
   // And fire off some rules only for INVALID ORDERS
+  // Notice in this case, we respond to the HTTP Input with an HTTP response, status 400 to indicate a bad request.
   {
     name: 'Process invalid Orders',
     rules: [
       {
         when: 'orderIsNotValid',
         then: [
-          { closure: 'buildOrderDispatch_InvalidOrder' },
-          { closure: 'prepareAmqpPublishAction' },
+          {
+            closure: 'throw-http-error',
+            errorMessage:
+              'The request did not contain a valid order. Please check the passed body and make adjustments!',
+            errorName: 'Bad Request',
+            httpStatusCode: 400,
+          },
         ],
       },
     ],

@@ -62,8 +62,8 @@ export default class CoreInputAmqp implements IInputProvider {
    *
    * Does this by...
    * 1. Points the passed in applyInputCb to a class instance handler
-   * 2. If this is the first call then we register the amqpHandler function with the amqp provider
-   * *  If not the first call then we do nothing else
+   * 2. If this is the first call then we register an amqpCacoon consumer which in turn
+   *    registers an amqpHandler function that will receive all new AMQP messages.
    *
    * @param applyInputCb - a handler that will be called when there is input. It should be passed input and context.
    * @returns Promise<void>

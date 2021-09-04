@@ -66,6 +66,9 @@ The following Core Inputs are available starting with version 2 of Rule Harveste
 - CoreInputAmqp - Establishes a consumer connection to an AMQP Broker Host (RabbitMQ) on a specific Queue. When a message 
   is received in this queue, the message is put through the rules engine. See the example **example-amqp-input.js** for 
   detailed usage.
+- CoreInputHttp - Starts an HTTP server on one or more ports then passes any requests into the rules engine. Also, this
+  input can respond to the incoming HTTP requests either by waiting for a result from the rules engine or using a static
+  response, or even an empty response.
 
 The Rule Harvester maintainers expect to continually be adding to Core Inputs. Because of that, rather than trying
 to explain each of the inputs here, you are invited to check out the ./examples/ directory of this repo. Each
@@ -853,7 +856,8 @@ for other functionality:
 
 - (high priority) Add a more flexible NACK with Re-Publish to the Core AMQP Input. See TODO in **amqp-input.ts**.
 - (medium) Add tests for Core Input AMQP, Core Output AMQP, Core Closures
-- (low priority) Consider JSON5 for rules and corpus.
+- (medium) Add tests for Core Input HTTP  
+- (low priority, tentative) Consider supporting JSON5 for rules and corpus.
 
 ## License
 
