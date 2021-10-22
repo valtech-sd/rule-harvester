@@ -889,4 +889,4 @@ for other functionality:
 
 ## License
 
-Rule Harvester uses an MIT license. Please refer to the [license file](LICENSE.md) for more details.
+Rule Harvester uses an MIT license. Please refer to the [license file](LICENSE.md) for more details. 
