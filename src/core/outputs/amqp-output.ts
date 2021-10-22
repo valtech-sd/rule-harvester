@@ -1,8 +1,6 @@
 import { IOutputProvider, IOutputResult } from '../../types';
 import { ICoreAmqpPublishAction } from '../types/amqp-types';
 import AmqpCacoon, {
-  ConsumeMessage,
-  Channel,
   ChannelWrapper,
 } from 'amqp-cacoon';
 import { Logger } from 'log4js';
@@ -12,7 +10,7 @@ import { default as util } from 'util';
 /**
  * Rule Output Provider Amqp
  *
- * This class wires up the AmqpCacoon to a rule output provider.
+ * This class wires up the AmqpCacoon to a rule output provider for an AMQP Response.
  *
  * Usage:
  * 1. Instantiate the class and pass in the instantiated amqpCacoon and logger
@@ -44,7 +42,7 @@ export default class CoreOutputAmqp implements IOutputProvider {
   /**
    * outputResult
    *
-   * Outputs a result from a rules engine pass.
+   * Outputs a result from a rules engine pass IF the result facts contains an AMQP Response!
    *
    * Does this by...
    * 1. Receives a result

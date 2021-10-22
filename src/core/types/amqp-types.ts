@@ -34,3 +34,15 @@ export interface ICoreAmqpPublishAction {
   // options! This allows setting headers, expiration, etc.
   amqpPublishOptions?: object;
 }
+
+/**
+ * Core AMQP RPC Publish Action - Used for the Core AMQP RPC Output
+ *
+ * This object is used to control what the Core AMQP RPC Output publishes.
+ *
+ * This is intended to be passed as a single property inside an updated facts object amqpRpcPublishAction.
+ */
+export interface ICoreAmqpRpcPublishAction {
+  // The content of the response message, which should already be a string. Applications should JSON.stringify before passing.
+  amqpRpcResponse: string;
+}

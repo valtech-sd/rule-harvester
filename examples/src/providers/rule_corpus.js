@@ -34,70 +34,55 @@ module.exports = [
         then: [
           // Set the Sales Tax for Digital Orders first since those don't have per-state sales tax
           {
-            name: 'process digital item orders',
-            rules: [
+            // process digital item orders
+            when: [
               {
-                when: [
-                  {
-                    closure: 'equal',
-                    '^value1': 'productType',
-                    value2: 'digital',
-                  },
-                ],
-                then: [
-                  { closure: 'setSalesTaxPercentageFixed', percentage: 0 },
-                ],
+                closure: 'equal',
+                '^value1': 'productType',
+                value2: 'digital',
               },
             ],
+            then: [{ closure: 'setSalesTaxPercentageFixed', percentage: 0 }],
           },
           // Next Set the Sales Tax for Non-Digital Orders where we do have to check the state
           {
-            name: 'process non digital item orders',
-            rules: [
+            // process non digital item orders
+            when: [
+              {
+                closure: 'not-equal',
+                '^value1': 'productType',
+                value2: 'digital',
+              },
+            ],
+            then: [
+              // Set the Sales Tax according to the order's state
               {
                 when: [
                   {
-                    closure: 'not-equal',
-                    '^value1': 'productType',
-                    value2: 'digital',
+                    closure: 'checkShippingState',
+                    '^orderShippingState': 'shipping.state',
+                    state: 'FL',
                   },
                 ],
                 then: [
-                  // Set the Sales Tax according to the order's state
                   {
-                    name: 'process by state',
-                    rules: [
-                      {
-                        when: [
-                          {
-                            closure: 'checkShippingState',
-                            '^orderShippingState': 'shipping.state',
-                            state: 'FL',
-                          },
-                        ],
-                        then: [
-                          {
-                            closure: 'setSalesTaxPercentage',
-                            percentClosureName: 'getSalesTaxPercentageFl',
-                          },
-                        ],
-                      },
-                      {
-                        when: [
-                          {
-                            closure: 'checkShippingState',
-                            '^orderShippingState': 'shipping.state',
-                            state: 'CA',
-                          },
-                        ],
-                        then: [
-                          {
-                            closure: 'setSalesTaxPercentage',
-                            percentClosureName: 'getSalesTaxPercentageCa',
-                          },
-                        ],
-                      },
-                    ],
+                    closure: 'setSalesTaxPercentage',
+                    percentClosureName: 'getSalesTaxPercentageFl',
+                  },
+                ],
+              },
+              {
+                when: [
+                  {
+                    closure: 'checkShippingState',
+                    '^orderShippingState': 'shipping.state',
+                    state: 'CA',
+                  },
+                ],
+                then: [
+                  {
+                    closure: 'setSalesTaxPercentage',
+                    percentClosureName: 'getSalesTaxPercentageCa',
                   },
                 ],
               },
@@ -105,17 +90,14 @@ module.exports = [
           },
           // Now that we have Sales Tax set based on the above criteria, we can process the order finally!
           {
-            name: 'Send the Order Bill',
-            rules: [
-              {
-                when: 'always',
-                then: [
-                  { closure: 'calculateTaxes' },
-                  { closure: 'calculateTotalPrice' },
-                  { closure: 'buildOrderDispatch' },
-                  { closure: 'prepareAmqpPublishAction' },
-                ],
-              },
+            // 'Send the Order Bill'
+            when: 'always',
+            then: [
+              { closure: 'calculateTaxes' },
+              { closure: 'calculateTotalPrice' },
+              { closure: 'buildOrderDispatch' },
+              { closure: 'prepareAmqpPublishAction' },
+              { closure: 'prepareAmqpRpcPublishAction' },
             ],
           },
         ],

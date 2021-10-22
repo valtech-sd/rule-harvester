@@ -92,6 +92,15 @@ The following Core Outputs are available:
   pass `result` is received by this output, the output looks for an amqpPublishAction object. If found, it publishes to 
   an Exchange following the details in that object, including being able to set a routing key and other AMQP publish
   options. See the example **example-amqp-output.js** for detailed usage.
+- CoreOutputAmqpRpc - This output is only useful when paired with the CoreInputAmqp and allows for the publishing of 
+  the result of a rules engine pass into the same AMQP broker where the input came from. When a rules pass `result` is 
+  received by this output, the output looks for an amqpRpcPublishAction object. If found, this output then also inspects
+  the original received amqpMessage (received via CoreAmqpInput) and looks for `replyTo` and a `correlationId`properties.
+  If it finds them, it then publishes to the queue denoted in `replyTo` and assigns the response's property `correlationId`
+  to match the value received in the incoming amqpMessage. Note that in some client SDKS (in fact even in RMQ's own
+  web management portal) the two properties are passed as `reply_to` and `correlation_id`. However, inside this library
+  the values are exposed via Node AMQP Connection Manager as `replyTo` and `correlationId` in the `properties` of an
+  AMQP message.
 
 The Rule Harvester maintainers expect to continually be adding to Core Outputs. Because of that, rather than trying
 to explain each of the outputs here, you are invited to check out the ./examples/ directory of this repo. Each
@@ -401,7 +410,7 @@ The package comes with some configuration options.
 | Option            | type                    | description                                |
 | ----------------- | ----------------------- | ------------------------------------------ |
 | provider          | Object                  | An object containing the following options |
-| provider.outputs  | Array<IOutputProvider>  | This is an array of output provders        |
+| provider.outputs  | Array<IOutputProvider>  | This is an array of output providers       |
 | provider.inputs   | Array<IInputProvider>   | This is an array of input providers        |
 | provider.corpus   | Array<ICorpusRuleGroup> | This is an array of rule groups            |
 | provider.closures | Array<IClosure>         | Array of rule closures                     |
@@ -563,103 +572,122 @@ unnecessarily.
 /**
  * This is an example rule corpus that processes orders
  **/
+
 module.exports = [
-   // First validate the order
-   {
-      name: 'Validate the incoming order',
-      rules: [
-         {
-            when: 'always',
-            then: [{ closure: 'validateOrder' }],
-         },
-      ],
-   },
-   // Now that we've validated, fire off some rules only for VALID ORDERS
-   {
-      name: 'process valid orders',
-      rules: [
-         {
-            when: 'orderIsValid',
-            then: [
-               // Set the Sales Tax for Digital Orders first since those don't have per-state sales tax
-               {
-                  name: 'process digital item orders',
-                  rules: [
-                     {
-                        when: [
-                           { closure: 'equal', value1: '^productType', value2: 'digital' },
-                        ],
-                        then: [
-                           { closure: 'setSalesTaxPercentageFixed', percentage: 0 },
-                        ],
-                     },
-                  ],
-               },
-               // Next Set the Sales Tax for Non-Digital Orders where we do have to check the state
-               {
-                  name: 'process non digital item orders',
-                  rules: [
-                     {
-                        when: [
-                           { closure: 'not-equal', value1: '^productType', value2: 'digital' },
-                        ],
-                        then: [
-                           // Set the Sales Tax according to the order's state
-                           {
-                              name: 'process by state',
-                              rules: [
-                                 {
-                                    when: [{ closure: 'checkShippingState', state: 'FL' }],
-                                    then: [
-                                       {
-                                          closure: 'setSalesTaxPercentage',
-                                          percentClosureName: 'getSalesTaxPercentageFl',
-                                       },
-                                    ],
-                                 },
-                                 {
-                                    when: [{ closure: 'checkShippingState', state: 'CA' }],
-                                    then: [
-                                       {
-                                          closure: 'setSalesTaxPercentage',
-                                          percentClosureName: 'getSalesTaxPercentageCa',
-                                       },
-                                    ],
-                                 },
-                              ],
-                           },
-                        ],
-                     },
-                  ],
-               },
-               // Now that we have Sales Tax set based on the above criteria, we can process the order finally!
-               {
-                  name: 'Send the Order Bill',
-                  rules: [
-                     {
-                        when: 'always',
-                        then: [
-                           { closure: 'calculateTaxes' },
-                           { closure: 'calculateTotalPrice' },
-                           { closure: 'buildOrderDispatch' },
-                        ],
-                     },
-                  ],
-               },
+  // First validate the order
+  {
+    name: 'Validate the incoming order',
+    rules: [
+      {
+        when: 'invalidOrderFile',
+        then: [
+          {
+            closure: 'throw-message-validation-error',
+            errorMessage: 'Invalid JSON!',
+          },
+        ],
+      },
+      {
+        when: 'always',
+        then: [
+          { closure: 'reformat-amqp-message' },
+          { closure: 'validateOrder' },
+        ],
+      },
+    ],
+  },
+  // Now that we've validated, fire off some rules only for VALID ORDERS
+  {
+    name: 'process valid orders',
+    rules: [
+      {
+        when: 'orderIsValid',
+        then: [
+          // Set the Sales Tax for Digital Orders first since those don't have per-state sales tax
+          {
+            // process digital item orders
+            when: [
+              {
+                closure: 'equal',
+                '^value1': 'productType',
+                value2: 'digital',
+              },
             ],
-         },
-      ],
-   },
-   // And fire off some rules only for INVALID ORDERS
-   {
-      name: 'Process invalid Orders',
-      rules: [
-         {
-            when: 'orderIsNotValid',
-            then: [{ closure: 'buildOrderDispatch_InvalidOrder' }],
-         },
-      ],
-   },
+            then: [{ closure: 'setSalesTaxPercentageFixed', percentage: 0 }],
+          },
+          // Next Set the Sales Tax for Non-Digital Orders where we do have to check the state
+          {
+            // process non digital item orders
+            when: [
+              {
+                closure: 'not-equal',
+                '^value1': 'productType',
+                value2: 'digital',
+              },
+            ],
+            then: [
+              // Set the Sales Tax according to the order's state
+              {
+                when: [
+                  {
+                    closure: 'checkShippingState',
+                    '^orderShippingState': 'shipping.state',
+                    state: 'FL',
+                  },
+                ],
+                then: [
+                  {
+                    closure: 'setSalesTaxPercentage',
+                    percentClosureName: 'getSalesTaxPercentageFl',
+                  },
+                ],
+              },
+              {
+                when: [
+                  {
+                    closure: 'checkShippingState',
+                    '^orderShippingState': 'shipping.state',
+                    state: 'CA',
+                  },
+                ],
+                then: [
+                  {
+                    closure: 'setSalesTaxPercentage',
+                    percentClosureName: 'getSalesTaxPercentageCa',
+                  },
+                ],
+              },
+            ],
+          },
+          // Now that we have Sales Tax set based on the above criteria, we can process the order finally!
+          {
+            // 'Send the Order Bill'
+            when: 'always',
+            then: [
+              { closure: 'calculateTaxes' },
+              { closure: 'calculateTotalPrice' },
+              { closure: 'buildOrderDispatch' },
+              { closure: 'prepareAmqpPublishAction' },
+              { closure: 'prepareAmqpRpcPublishAction' },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  // And fire off some rules only for INVALID ORDERS
+  {
+    name: 'Process invalid Orders',
+    rules: [
+      {
+        when: 'orderIsNotValid',
+        then: [
+          { closure: 'buildOrderDispatch_InvalidOrder' },
+          { closure: 'prepareAmqpPublishAction' },
+        ],
+      },
+    ],
+  },
 ];
 ```
 
