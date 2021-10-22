@@ -52,8 +52,9 @@ export {
   CoreInputHttpResponseType,
 } from './core/inputs/http-input';
 
-// Export Core Output, individually since these are pick-and-choose
+// Export Core Outputs, individually since these are pick-and-choose
 export { default as CoreOutputAmqp } from './core/outputs/amqp-output';
+export { default as CoreOutputAmqpRpc } from './core/outputs/amqp-rpc-output';
 
 // Export Core Types that are shared by various components
 // AMQP

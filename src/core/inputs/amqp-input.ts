@@ -134,7 +134,11 @@ export default class CoreInputAmqp implements IInputProvider {
       // ICoreAmqpMessage. Why? This input can't "own" the facts structure of the rules engine
       // since that should be driven by an application. Therefore, we just put in 1 item into
       // facts, an amqpMessage and then let the application do whatever it wants/needs.
-      await this.handler({ amqpMessage: amqpMessage }, context);
+      // Note, the handler WILL return updated facts, but we're not using them in this input!
+      const resultFacts = await this.handler(
+        { amqpMessage: amqpMessage },
+        context
+      );
 
       // Ack the message
       channel.ack(msg);

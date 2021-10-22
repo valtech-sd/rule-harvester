@@ -96,6 +96,36 @@ ${JSON.stringify(facts, null, 2)}
       return facts;
     },
   },
+
+  {
+    /**
+     * prepareAmqpRpcPublishAction
+     *
+     * Takes an order facts object and adds an <ICoreAmqpRpcPublishAction>amqpRpcPublishAction object
+     * so that an AMQP RPC Output can send the order to a broker.
+     *
+     * Of course, this one is only useful IF the rules engine instance has an AMQP RPC Output as one
+     * of its outputs.
+     *
+     * @param - facts
+     * @param - context
+     * @return - Build the dispatch
+     **/
+    name: 'prepareAmqpRpcPublishAction',
+    handler(facts, context) {
+      // The AMQP Rpc Output expects amqpRpcPublishAction, so we add that to facts
+      // Note that this supports s SINGLE response!
+      facts.amqpRpcPublishAction =
+        {
+          // REQUIRED: amqpMessageContent is set to whatever it is we want to publish to the broker
+          amqpRpcResponse: facts.orderDispatch,
+        }
+
+      // Return the modified facts.
+      return facts;
+    },
+  },
+
   {
     /**
      * prepareHttpResponseAction

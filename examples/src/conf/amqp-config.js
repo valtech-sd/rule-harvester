@@ -44,6 +44,7 @@ const amqpConfig = {
   exampleExchange: 'example-input-exchange',
   exampleQueueOutput: 'example-output-queue',
   exampleExchangeOutput: 'example-output-exchange',
+  exampleQueueRpcResponse: 'example-rpc-output-queue',
 };
 
 module.exports = amqpConfig;
