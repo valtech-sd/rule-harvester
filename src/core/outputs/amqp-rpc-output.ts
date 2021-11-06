@@ -132,7 +132,7 @@ export default class CoreOutputAmqpRpc implements IOutputProvider {
       } else {
         // We don't have an amqpPublishAction, so we log that.
         this.logger.error(
-          `CoreOutputAmqpRpc.outputResult: Error in retrieving an amqpRpcPublishAction from result.facts. Nothing was published.`
+          `CoreOutputAmqpRpc.outputResult: Error in retrieving the original amqpMessage or an amqpRpcPublishAction from result.facts. Nothing was published.`
         );
       }
     } catch (e) {
