@@ -10,6 +10,7 @@ defaults: &defaults
     - image: circleci/node:14.18
 
 jobs:
+
   test:
     <<: *defaults
     steps:
@@ -34,6 +35,7 @@ jobs:
       - persist_to_workspace:
           root: ~/repo
           paths: .
+          
   deploy:
     <<: *defaults
     steps:
@@ -46,6 +48,7 @@ jobs:
 
 workflows:
   version: 2
+  
   test-deploy:
     jobs:
       - test
