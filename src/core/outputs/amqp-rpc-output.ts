@@ -130,10 +130,16 @@ export default class CoreOutputAmqpRpc implements IOutputProvider {
           );
         }
       } else {
-        // We don't have an amqpPublishAction, so we log that.
-        this.logger.error(
-          `CoreOutputAmqpRpc.outputResult: Error in retrieving the original amqpMessage or an amqpRpcPublishAction from result.facts. Nothing was published.`
-        );
+        if (
+          !result?.facts?.amqpMessage &&
+          result?.facts?.amqpRpcPublishAction
+        ) {
+          // We have an amqpRpcPublishAction, but we can't retrieve the original amqpMessage.
+          // This means we won't be able to respond since the original message is needed to know how to respond!
+          this.logger.error(
+            `CoreOutputAmqpRpc.outputResult: Error in retrieving the original amqpMessage for an amqpRpcPublishAction from result.facts. Nothing was published.`
+          );
+        }
       }
     } catch (e) {
       // Oh no! Something else. Log the error.
