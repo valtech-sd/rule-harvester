@@ -18,7 +18,7 @@ import { default as util } from 'util';
  **/
 export default class CoreOutputAmqpRpc implements IOutputProvider {
   private alreadyRegistered: boolean;
-  private logger: Logger;
+  private logger?: Logger;
   private amqpCacoon: AmqpCacoon;
   private amqpPublishChannelWrapper!: ChannelWrapper;
 
@@ -64,7 +64,7 @@ export default class CoreOutputAmqpRpc implements IOutputProvider {
    * @returns Promise<void>
    **/
   async outputResult(result: IOutputResult) {
-    this.logger.trace(`CoreOutputAmqpRpc.outputResult: Start`);
+    this.logger?.trace(`CoreOutputAmqpRpc.outputResult: Start`);
 
     // Open our publish channel, but only if we've not already done it!
     if (!this.alreadyRegistered) {
@@ -79,7 +79,7 @@ export default class CoreOutputAmqpRpc implements IOutputProvider {
     try {
       if (result.error) {
         // The rules engine already sent in an error, so we just log and not output
-        this.logger.error(
+        this.logger?.error(
           `CoreOutputAmqpRpc.outputResult: the result object contained an error. Nothing will publish. The error received was: ${util.inspect(
             result.error
           )}`
@@ -120,12 +120,12 @@ export default class CoreOutputAmqpRpc implements IOutputProvider {
             { correlationId: correlationId }
           );
           // Log success
-          this.logger.info(
+          this.logger?.info(
             `CoreOutputAmqpRpc.outputResult: Message published to reply-to='${replyTo}'.`
           );
         } else {
           // We don't have a replyTo nor correlationId, so we log that.
-          this.logger.error(
+          this.logger?.error(
             `CoreOutputAmqpRpc.outputResult: Error in executing amqpRpcPublishAction from result.facts. The original message did not have the required properties "reply_to" and "correlation_id". Unable to respond via AMQP RPC.`
           );
         }
@@ -136,18 +136,18 @@ export default class CoreOutputAmqpRpc implements IOutputProvider {
         ) {
           // We have an amqpRpcPublishAction, but we can't retrieve the original amqpMessage.
           // This means we won't be able to respond since the original message is needed to know how to respond!
-          this.logger.error(
+          this.logger?.error(
             `CoreOutputAmqpRpc.outputResult: Error in retrieving the original amqpMessage for an amqpRpcPublishAction from result.facts. Nothing was published.`
           );
         }
       }
     } catch (e) {
       // Oh no! Something else. Log the error.
-      this.logger.error(
+      this.logger?.error(
         `CoreOutputAmqpRpc.outputResult: Error - INNER ERROR: ${e.message}`
       );
     }
 
-    this.logger.trace(`CoreOutputAmqpRpc.outputResult: End`);
+    this.logger?.trace(`CoreOutputAmqpRpc.outputResult: End`);
   }
 }

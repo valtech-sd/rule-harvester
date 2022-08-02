@@ -19,15 +19,17 @@
     "test": "mocha -r ts-node/register ./tests/**/*.test.ts"
   },
   "dependencies": {
+    "amqp-cacoon": "^3.0.3",
+    "coronado-bridge": "^2.0.0",
     "lodash": "^4.17.21",
     "log4js": "^6.3.0",
-    "rules-js": "^1.0.0",
-    "amqp-cacoon": "^3.0.3",
-    "coronado-bridge": "^2.0.0"
+    "rules-js": "^1.0.0"
   },
   "author": "Valtech: Daniel Morris",
   "license": "MIT",
   "devDependencies": {
+    "@types/amqp-connection-manager": "^2.0.12",
+    "@types/amqplib": "^0.8.2",
     "@types/chai": "^4.2.21",
     "@types/lodash": "^4.14.172",
     "@types/mocha": "^9.0.0",
@@ -39,9 +41,7 @@
     "sinon": "^11.1.2",
     "ts-node": "^10.2.1",
     "ts-sinon": "^2.0.1",
-    "typescript": "^4.3.5",
-    "@types/amqp-connection-manager": "^2.0.12",
-    "@types/amqplib": "^0.8.2"
+    "typescript": "^4.3.5"
   },
   "publishConfig": {
     "access": "public"
