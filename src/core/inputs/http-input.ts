@@ -8,7 +8,7 @@ import CoronadoBridge, {
 } from 'coronado-bridge';
 
 // Bring in rule-harvester dependencies
-import { IInputProvider } from '../../types';
+import { IInputProvider, ILogger } from '../../types';
 import { ICoreHttpRequest } from '../types/http-types';
 
 /**
@@ -40,7 +40,7 @@ export interface ICoreInputHttpProviderOptions {
 
 export default class CoreInputHttp implements IInputProvider {
   private alreadyRegistered: boolean;
-  private logger?: Logger;
+  private logger?: ILogger;
   private httpPorts: Array<number>;
   private httpBridge!: CoronadoBridge;
   private httpHandler!: any;
@@ -57,7 +57,7 @@ export default class CoreInputHttp implements IInputProvider {
    **/
   constructor(
     httpPorts: Array<number>,
-    logger: Logger | undefined,
+    logger: ILogger | undefined,
     options: ICoreInputHttpProviderOptions
   ) {
     this.alreadyRegistered = false;
@@ -95,7 +95,7 @@ export default class CoreInputHttp implements IInputProvider {
       // Configure then Start up a new instance of the Http Bridge (note, this wires in the handler!)
       const bridgeConfig: IBridgeConfig = {
         ports: this.httpPorts,
-        logger: this.logger,
+        logger: this.logger as Logger,
         outboundProvider: this.httpHandler,
       };
       this.httpBridge = new CoronadoBridge(bridgeConfig);
@@ -130,13 +130,13 @@ export default class CoreInputHttp implements IInputProvider {
  */
 class HttpHandler implements IOutboundProvider {
   private applyInputCb;
-  private logger?: Logger;
+  private logger?: ILogger;
   private options: ICoreInputHttpProviderOptions;
 
   // Construct our instance, holding the reference to the Rule-Harvester Apply Input Callback
   constructor(
     applyInputCb: (input: any, context: any) => Promise<any>,
-    logger: Logger | undefined,
+    logger: ILogger | undefined,
     options: ICoreInputHttpProviderOptions
   ) {
     this.applyInputCb = applyInputCb;

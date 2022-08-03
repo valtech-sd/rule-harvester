@@ -1,7 +1,6 @@
-import { IOutputProvider, IOutputResult } from '../../types';
+import { ILogger, IOutputProvider, IOutputResult } from '../../types';
 import { ICoreAmqpRpcPublishAction } from '../types/amqp-types';
 import AmqpCacoon, { ChannelWrapper } from 'amqp-cacoon';
-import { Logger } from 'log4js';
 import _ from 'lodash';
 import { default as util } from 'util';
 
@@ -18,7 +17,7 @@ import { default as util } from 'util';
  **/
 export default class CoreOutputAmqpRpc implements IOutputProvider {
   private alreadyRegistered: boolean;
-  private logger?: Logger;
+  private logger?: ILogger;
   private amqpCacoon: AmqpCacoon;
   private amqpPublishChannelWrapper!: ChannelWrapper;
 
@@ -30,7 +29,7 @@ export default class CoreOutputAmqpRpc implements IOutputProvider {
    * @param amqpCacoon - an instance of AMQP Cacoon which will manage all AMQP communications.
    * @param logger - a log4js logger instance to use for logging.
    **/
-  constructor(amqpCacoon: AmqpCacoon, logger: Logger) {
+  constructor(amqpCacoon: AmqpCacoon, logger: ILogger) {
     this.alreadyRegistered = false;
     // Save the constructor parameters to local class variables
     this.logger = logger;

@@ -1,11 +1,10 @@
-import { IInputProvider } from '../../types';
+import { IInputProvider, ILogger } from '../../types';
 import { ICoreAmqpMessage } from '../types/amqp-types';
 import AmqpCacoon, {
   ConsumeMessage,
   Channel,
   ChannelWrapper,
 } from 'amqp-cacoon';
-import { Logger } from 'log4js';
 import _ from 'lodash';
 import { default as util } from 'util';
 
@@ -28,7 +27,7 @@ export interface ICoreInputAmqpProviderOptions {
 export default class CoreInputAmqp implements IInputProvider {
   private handler!: (input: any, context: any) => Promise<any>;
   private alreadyRegistered: boolean;
-  private logger?: Logger;
+  private logger?: ILogger;
   private amqpCacoon: AmqpCacoon;
   private amqpQueue: string;
   private options: ICoreInputAmqpProviderOptions;
@@ -46,7 +45,7 @@ export default class CoreInputAmqp implements IInputProvider {
   constructor(
     amqpCacoon: AmqpCacoon,
     amqpQueue: string,
-    logger: Logger | undefined,
+    logger: ILogger | undefined,
     options: ICoreInputAmqpProviderOptions
   ) {
     this.alreadyRegistered = false;
