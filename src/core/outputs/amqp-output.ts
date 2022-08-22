@@ -1,9 +1,8 @@
-import { IOutputProvider, IOutputResult } from '../../types';
+import { ILogger, IOutputProvider, IOutputResult } from '../../types';
 import { ICoreAmqpPublishAction } from '../types/amqp-types';
 import AmqpCacoon, {
   ChannelWrapper,
 } from 'amqp-cacoon';
-import { Logger } from 'log4js';
 import _ from 'lodash';
 import { default as util } from 'util';
 
@@ -20,7 +19,7 @@ import { default as util } from 'util';
  **/
 export default class CoreOutputAmqp implements IOutputProvider {
   private alreadyRegistered: boolean;
-  private logger: Logger;
+  private logger?: ILogger;
   private amqpCacoon: AmqpCacoon;
   private amqpPublishChannelWrapper!: ChannelWrapper;
 
@@ -32,7 +31,7 @@ export default class CoreOutputAmqp implements IOutputProvider {
    * @param amqpCacoon - an instance of AMQP Cacoon which will manage all AMQP communications.
    * @param logger - a log4js logger instance to use for logging.
    **/
-  constructor(amqpCacoon: AmqpCacoon, logger: Logger) {
+  constructor(amqpCacoon: AmqpCacoon, logger: ILogger) {
     this.alreadyRegistered = false;
     // Save the constructor parameters to local class variables
     this.logger = logger;
@@ -66,7 +65,7 @@ export default class CoreOutputAmqp implements IOutputProvider {
    * @returns Promise<void>
    **/
   async outputResult(result: IOutputResult) {
-    this.logger.trace(`CoreOutputAmqp.outputResult: Start`);
+    this.logger?.trace(`CoreOutputAmqp.outputResult: Start`);
 
     // Open our publish channel, but only if we've not already done it!
     if (!this.alreadyRegistered) {
@@ -81,7 +80,7 @@ export default class CoreOutputAmqp implements IOutputProvider {
     try {
       if (result.error) {
         // The rules engine already sent in an error, so we just log and not output
-        this.logger.error(
+        this.logger?.error(
           `CoreOutputAmqp.outputResult: the result object contained an error. Nothing will publish. The error received was: ${util.inspect(
             result.error
           )}`
@@ -117,23 +116,23 @@ export default class CoreOutputAmqp implements IOutputProvider {
             amqpPublishOptions
           );
           // Log success
-          this.logger.info(
+          this.logger?.info(
             `CoreOutputAmqp.outputResult: Message published to exchange='${amqpPublishExchange}' with routingKey='${amqpPublishRoutingKey}'.`
           );
         }
       } else {
         // We don't have an amqpPublishAction, so we log that.
-        this.logger.error(
+        this.logger?.error(
           `CoreOutputAmqp.outputResult: Error in retrieving an amqpPublishAction from result.facts. Nothing was published.`
         );
       }
     } catch (e) {
       // Oh no! Something else. Log the error.
-      this.logger.error(
+      this.logger?.error(
         `CoreOutputAmqp.outputResult: Error - INNER ERROR: ${e.message}`
       );
     }
 
-    this.logger.trace(`CoreOutputAmqp.outputResult: End`);
+    this.logger?.trace(`CoreOutputAmqp.outputResult: End`);
   }
 }

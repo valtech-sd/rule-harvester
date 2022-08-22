@@ -4,18 +4,18 @@ import {
   IOutputProvider,
   ICorpusRuleGroup,
   IClosure,
+  ILogger,
 } from './types';
 //@ts-ignore
 import Engine from 'rules-js';
 import _ from 'lodash';
-import { Logger } from 'log4js';
 
 export interface IRuleHarvesterProviders {
   inputs: IInputProvider[];
   outputs: IOutputProvider[];
   corpus: ICorpusRuleGroup[];
   closures: IClosure[];
-  logger?: Logger;
+  logger?: ILogger;
 }
 
 export interface IRuleHarvesterConfig {
@@ -67,7 +67,7 @@ export default class RuleHarvester {
   providers: IRuleHarvesterProviders;
   config: IRuleHarvesterConfig;
   engine: any;
-  logger?: Logger;
+  logger?: ILogger;
   fieldDereferenceChar: string = '^';
   ruleGroups: string[];
   extraContext?: object | null;

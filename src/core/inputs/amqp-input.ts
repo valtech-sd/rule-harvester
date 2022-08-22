@@ -1,11 +1,10 @@
-import { IInputProvider } from '../../types';
+import { IInputProvider, ILogger } from '../../types';
 import { ICoreAmqpMessage } from '../types/amqp-types';
 import AmqpCacoon, {
   ConsumeMessage,
   Channel,
   ChannelWrapper,
 } from 'amqp-cacoon';
-import { Logger } from 'log4js';
 import _ from 'lodash';
 import { default as util } from 'util';
 
@@ -28,7 +27,7 @@ export interface ICoreInputAmqpProviderOptions {
 export default class CoreInputAmqp implements IInputProvider {
   private handler!: (input: any, context: any) => Promise<any>;
   private alreadyRegistered: boolean;
-  private logger: Logger;
+  private logger?: ILogger;
   private amqpCacoon: AmqpCacoon;
   private amqpQueue: string;
   private options: ICoreInputAmqpProviderOptions;
@@ -46,7 +45,7 @@ export default class CoreInputAmqp implements IInputProvider {
   constructor(
     amqpCacoon: AmqpCacoon,
     amqpQueue: string,
-    logger: Logger,
+    logger: ILogger | undefined,
     options: ICoreInputAmqpProviderOptions
   ) {
     this.alreadyRegistered = false;
@@ -71,7 +70,7 @@ export default class CoreInputAmqp implements IInputProvider {
   async registerInput(
     applyInputCb: (input: any, context: any) => Promise<any>
   ) {
-    this.logger.trace(`CoreInputAmqp.registerHandler: Start`);
+    this.logger?.trace(`CoreInputAmqp.registerHandler: Start`);
 
     // Link applyInputCb to a class property we can reference later
     this.handler = applyInputCb;
@@ -85,7 +84,7 @@ export default class CoreInputAmqp implements IInputProvider {
       // Make so we only register one consumer
       this.alreadyRegistered = true;
     }
-    this.logger.trace(`CoreInputAmqp.registerHandler: End`);
+    this.logger?.trace(`CoreInputAmqp.registerHandler: End`);
   }
 
   /**
@@ -106,7 +105,7 @@ export default class CoreInputAmqp implements IInputProvider {
    * @return Promise<void>
    **/
   async amqpHandler(channel: ChannelWrapper, msg: ConsumeMessage) {
-    this.logger.trace(`CoreInputAmqp.amqpHandler: Start`);
+    this.logger?.trace(`CoreInputAmqp.amqpHandler: Start`);
     try {
       // Create an object for our message - note we DO NOT validate the message here at all!
       // It will be set to a string with whatever. it's the responsibility of the application
@@ -126,7 +125,7 @@ export default class CoreInputAmqp implements IInputProvider {
         context = _.merge(context, this.options.inputContextCallback(msg));
       }
 
-      this.logger.debug(
+      this.logger?.debug(
         `CoreInputAmqp.amqpHandler - amqpMessage: ${util.inspect(amqpMessage)}`
       );
 
@@ -150,14 +149,14 @@ export default class CoreInputAmqp implements IInputProvider {
       // to trigger this first condition! These messages, since they are invalid, are ACK so that they don't
       // requeue forever! (They're expected to fail any retry, since they're invalid!)
       if (e.name === 'MessageValidationError') {
-        this.logger.error(
+        this.logger?.error(
           `CoreInputAmqp.amqpHandler: Validation Error: ${e.message}`
         );
-        this.logger.trace(`The message contained: ${msg.content.toString()}`);
-        this.logger.trace(
+        this.logger?.trace(`The message contained: ${msg.content.toString()}`);
+        this.logger?.trace(
           `The message fields contained: ${util.inspect(msg.fields)}`
         );
-        this.logger.trace(
+        this.logger?.trace(
           `The message properties contained: ${util.inspect(msg.properties)}`
         );
         // Since we're dealing with INVALID messages (as defined by the application using this Input) we
@@ -165,7 +164,7 @@ export default class CoreInputAmqp implements IInputProvider {
         channel.ack(msg);
       } else {
         // Otherwise, the error is something other than INVALID MESSAGE, so we deal with it.
-        this.logger.error(
+        this.logger?.error(
           `CoreInputAmqp.amqpHandler - Will Nack Message - INNER ERROR: ${e.message}`
         );
         // TODO: Implement a requeueHandler callback - it will get the ORIGINAL message and context since
@@ -175,6 +174,6 @@ export default class CoreInputAmqp implements IInputProvider {
         channel.nack(msg, false, this.options.requeueOnNack || false);
       }
     }
-    this.logger.trace(`CoreInputAmqp.amqpHandler: End`);
+    this.logger?.trace(`CoreInputAmqp.amqpHandler: End`);
   }
 }

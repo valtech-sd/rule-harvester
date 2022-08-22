@@ -8,7 +8,7 @@ import CoronadoBridge, {
 } from 'coronado-bridge';
 
 // Bring in rule-harvester dependencies
-import { IInputProvider } from '../../types';
+import { IInputProvider, ILogger } from '../../types';
 import { ICoreHttpRequest } from '../types/http-types';
 
 /**
@@ -40,7 +40,7 @@ export interface ICoreInputHttpProviderOptions {
 
 export default class CoreInputHttp implements IInputProvider {
   private alreadyRegistered: boolean;
-  private logger: Logger;
+  private logger?: ILogger;
   private httpPorts: Array<number>;
   private httpBridge!: CoronadoBridge;
   private httpHandler!: any;
@@ -57,7 +57,7 @@ export default class CoreInputHttp implements IInputProvider {
    **/
   constructor(
     httpPorts: Array<number>,
-    logger: Logger,
+    logger: ILogger | undefined,
     options: ICoreInputHttpProviderOptions
   ) {
     this.alreadyRegistered = false;
@@ -85,7 +85,7 @@ export default class CoreInputHttp implements IInputProvider {
   async registerInput(
     applyInputCb: (input: any, context: any) => Promise<any>
   ) {
-    this.logger.trace(`CoreInputHttp.registerHandler: Start`);
+    this.logger?.trace(`CoreInputHttp.registerHandler: Start`);
 
     // Setup a handler for the Http request
     this.httpHandler = new HttpHandler(applyInputCb, this.logger, this.options);
@@ -95,14 +95,14 @@ export default class CoreInputHttp implements IInputProvider {
       // Configure then Start up a new instance of the Http Bridge (note, this wires in the handler!)
       const bridgeConfig: IBridgeConfig = {
         ports: this.httpPorts,
-        logger: this.logger,
+        logger: this.logger as Logger,
         outboundProvider: this.httpHandler,
       };
       this.httpBridge = new CoronadoBridge(bridgeConfig);
       // Keep track so that we only register one http bridge
       this.alreadyRegistered = true;
     }
-    this.logger.trace(`CoreInputHttp.registerHandler: End`);
+    this.logger?.trace(`CoreInputHttp.registerHandler: End`);
   }
 
   async unregisterInput() {
@@ -130,13 +130,13 @@ export default class CoreInputHttp implements IInputProvider {
  */
 class HttpHandler implements IOutboundProvider {
   private applyInputCb;
-  private logger: Logger;
+  private logger?: ILogger;
   private options: ICoreInputHttpProviderOptions;
 
   // Construct our instance, holding the reference to the Rule-Harvester Apply Input Callback
   constructor(
     applyInputCb: (input: any, context: any) => Promise<any>,
-    logger: Logger,
+    logger: ILogger | undefined,
     options: ICoreInputHttpProviderOptions
   ) {
     this.applyInputCb = applyInputCb;
@@ -181,7 +181,7 @@ class HttpHandler implements IOutboundProvider {
    */
   async handler(req: ICoreHttpRequest) {
     // Trace out the request
-    this.logger.trace(req);
+    this.logger?.trace(req);
 
     // And an object for our context
     let context: any = {};
@@ -219,7 +219,7 @@ class HttpHandler implements IOutboundProvider {
       // Something threw. We pass it forward. If it's a BridgeError the bridge will
       // pass properly formatted to the http client! Otherwise, the bridge will return an http 500 with
       // ex.message.
-      this.logger.trace(
+      this.logger?.trace(
         `CoreInputHttp HttpHandler - Received error - ${ex.message}`
       );
       throw ex;
@@ -240,7 +240,7 @@ class HttpHandler implements IOutboundProvider {
     // engine might throw!
     const result = await this.applyInputCb({ httpRequest: req }, context);
     // Log the result
-    this.logger.trace(result);
+    this.logger?.trace(result);
     // Result (which is the entire altered facts object after a rules pass) can also contain
     // a property httpResponseAction in order to respond with something custom. If we find it
     // we respond wih that! If it's empty or just undefined, the http bridge will just respond
