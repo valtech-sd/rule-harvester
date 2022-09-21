@@ -438,6 +438,32 @@ ruleHarvester.start()
 > **Note:** The above configuration does not include [Core Closures](#core-closures) provided by the rules engine. See the section
 > [Configuration example](#configuration-example) for how to include Core Closures.
 
+## Logger
+You can pass a logger (optional) as the examples above. For a logger to work, it should have at least the following methods:
+
+- debug
+- error
+- fatal
+- info
+- trace
+
+Some loggers you may use:
+- [log4js](https://www.npmjs.com/package/log4js)
+- [tslog](https://www.npmjs.com/package/tslog)
+- [bunyan](https://www.npmjs.com/package/bunyan)
+
+The examples in the directory **./examples/src** use **log4js**. 
+And for a typescript project, using **tslog** is quite straightforward:  
+
+```typescript
+const logger = new Logger({
+	displayLoggerName: true,
+	minLevel: 'silly',
+	name: 'amqp-cacoon logger',
+	type: 'pretty'
+});
+```
+
 ## Example - Directory Watcher
 
 This repo provides a full example in the **examples** directory. The following are some snippets out of our example. 
