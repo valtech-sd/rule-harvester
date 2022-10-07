@@ -32,6 +32,32 @@ module.exports = [
   },
   {
     /**
+     * invalidOrderUdp
+     * example {closure: "invalidOrderUdp"} - If the order even valid
+     * @param type
+     * @return boolean - true if the order data is not valid JSON
+     **/
+    name: 'invalidOrderUdp',
+    handler(facts, context) {
+      try {
+        // The UDP Input gives us a special object and the property that
+        // holds our request (httpRequest).
+        // httpRequest conforms to IProviderReq and contains:
+        // - body: (string) - The received BODY as a string.
+        // - remoteInfo: (object) - Remote address information
+        // Ensure the request: is a POST + has a BODY
+        return !(
+          facts.udpRequest &&
+          facts.udpRequest.body &&
+          facts.udpRequest.remoteInfo
+        );
+      } catch (ex) {
+        return true;
+      }
+    },
+  },
+  {
+    /**
      * invalidOrderHttpPost
      * example {closure: "invalidOrderHttpPost"} - If the order post is not even valid
      * @param type
@@ -48,7 +74,12 @@ module.exports = [
         // - query: (object) - An object that has all the query string items.
         // - params?: (optional Array<string>) - This is the PATH of the request.
         // Ensure the request: is a POST + has a BODY
-        return !(facts.httpRequest && facts.httpRequest.body && facts.httpRequest.method && facts.httpRequest.method === 'POST');
+        return !(
+          facts.httpRequest &&
+          facts.httpRequest.body &&
+          facts.httpRequest.method &&
+          facts.httpRequest.method === 'POST'
+        );
       } catch (ex) {
         return true;
       }

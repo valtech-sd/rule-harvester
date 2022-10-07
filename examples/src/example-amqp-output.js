@@ -36,6 +36,7 @@ const AmqpCacoon = require('amqp-cacoon').default;
 // Bring in other Application Specific dependencies
 const RuleInputProviderDirectoryWatcher = require('./providers/rule_input_directory_watcher');
 const ruleClosures = require('./providers/rule_closures');
+const ruleClosuresAmqp = require('./providers/rule_closures/actions-amqp');
 const ruleCorpus = require('./providers/rule_corpus');
 const logger = require('./providers/custom_logger');
 
@@ -148,7 +149,7 @@ let rulesHarvester = new RulesHarvester({
     inputs: [new RuleInputProviderDirectoryWatcher()],
     outputs: [coreOutputAmqpProvider],
     corpus: ruleCorpus,
-    closures: ruleClosures,
+    closures: [...ruleClosures, ...ruleClosuresAmqp],
     logger: logger,
   },
 });

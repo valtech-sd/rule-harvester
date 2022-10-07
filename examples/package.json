@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node src/example-directory-watcher-input.js",
     "start-amqp": "node src/example-amqp-input.js",
+    "start-udp": "node src/example-udp-input.js",
     "start:dev": "nodemon",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

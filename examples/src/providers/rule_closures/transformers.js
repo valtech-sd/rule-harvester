@@ -6,6 +6,43 @@ const { ICoreHttpError } = require('rule-harvester');
 module.exports = [
   {
     /**
+     * reformat-udp-message
+     * Reformat an incoming UDP Message by pulling all the message "properties"
+     * into the root of the facts object. Why? So we can use the same rules we use for the Directory Watcher Input.
+     * @param - facts
+     * @param - context
+     * @return - facts, updated.
+     **/
+    name: 'reformat-udp-message',
+    async handler(facts, context) {
+      // The UDP Input gives us a special object. Check to see if this facts object is an AMQP input.
+      // If the facts object is not an AMQP input, we don't need to do any work!
+      // Note, this is completely application specific. A rules corpus can easily just work with
+      // facts.udpRequest
+      if (facts.udpRequest) {
+        try {
+          // We have an udpRequest so let's do some work to reformat it to make it
+          // easier to process with the rules that also process the Directory Watcher Input.
+          // First, we parse udpRequest.body, which we expect to be JSON, into an object.
+          const messageContent = JSON.parse(facts.udpRequest.body);
+          // Next, we parse out the properties of the messageContent into the root of the facts to imitate the
+          // same structure we receive from the Directory Watcher Input and so
+          // we don't have to keep reaching into body each time we want to pull a value.
+          facts = _.merge(facts, messageContent);
+        } catch (e) {
+          // Yikes. Something failed, so we throw the special 'MessageValidationError' that the UDP Input expects
+          // to indicate a malformed message.
+          const messageValidationError = new Error(e.message);
+          messageValidationError.name = 'MessageValidationError';
+          throw messageValidationError;
+        }
+      }
+      // Return the changed object (or if it was not an AMQP input, we just return the same facts we received).
+      return facts;
+    },
+  },
+  {
+    /**
      * reformat-amqp-message
      * Reformat an incoming AMQP Message by pulling all the message "properties"
      * into the root of the facts object. Why? So we can use the same rules we use for the Directory Watcher Input.
@@ -32,11 +69,7 @@ module.exports = [
           // we don't have to keep reaching into amqpMessageContent each time we want to pull a value.
           facts = _.merge(facts, messageContent);
         } catch (e) {
-          // Yikes. Something failed, so we throw the special 'MessageValidationError' that the AMQP Input expects
-          // to indicate a malformed message.
-          const messageValidationError = new Error(e.message);
-          messageValidationError.name = 'MessageValidationError';
-          throw messageValidationError;
+          throw e;
         }
       }
       // Return the changed object (or if it was not an AMQP input, we just return the same facts we received).
@@ -72,7 +105,11 @@ module.exports = [
         } catch (e) {
           // Yikes. Something failed, so we throw the custom 'BridgeError' that the HTTP Input expects
           // to indicate a malformed message.
-          throw new ICoreHttpError(500, e.message, 'reformat-http-request ERROR');
+          throw new ICoreHttpError(
+            500,
+            e.message,
+            'reformat-http-request ERROR'
+          );
         }
       }
       // Return the changed object (or if it was not an AMQP input, we just return the same facts we received).
