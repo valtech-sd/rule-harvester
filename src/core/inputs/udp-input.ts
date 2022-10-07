@@ -44,15 +44,6 @@ export default class CoreInputUdpProvider {
   /**
    * registerHandler
    *
-   * Does this by...
-   * 1. Starts an instance of the Udp Bridge (Coronado Bridge) which starts an Express server
-   *    on the ports declared in the private instance properties of the class (passed in the class
-   *    constructor).
-   * 1. The Udp Bridge receives the passed applyInputCb so that new Udp Requests can be
-   *    inputs into the rules engine.
-   * 2. If this is the first call then we register the UdpHandler function with the amqp provider
-   * *  If not the first call then we do nothing else
-   *
    * @param applyInputCb - a handler that will be called when there is input. It should be passed input and context.
    * @returns Promise<void>
    **/
@@ -125,6 +116,7 @@ export default class CoreInputUdpProvider {
         for (let socket of this.udpServer) {
           socket.close();
         }
+        this.udpServer = [];
         this.alreadyRegistered = false;
         resolve();
       } catch (e) {
