@@ -1,5 +1,4 @@
 // Bring in package dependencies
-import { Logger } from 'log4js';
 import _ from 'lodash';
 import CoronadoBridge, {
   IBridgeConfig,
@@ -52,7 +51,7 @@ export default class CoreInputHttp implements IInputProvider {
    * This function sets class level variables.
    *
    * @param httpPorts - an array of numbers, the ports to start HTTP servers on.
-   * @param logger - a log4js logger instance to use for logging.
+   * @param logger - a logger instance to use for logging. 
    * @param options
    **/
   constructor(
@@ -95,7 +94,7 @@ export default class CoreInputHttp implements IInputProvider {
       // Configure then Start up a new instance of the Http Bridge (note, this wires in the handler!)
       const bridgeConfig: IBridgeConfig = {
         ports: this.httpPorts,
-        logger: this.logger as Logger,
+        logger: this.logger,
         outboundProvider: this.httpHandler,
       };
       this.httpBridge = new CoronadoBridge(bridgeConfig);
