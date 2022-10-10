@@ -25,12 +25,13 @@ const coreUdpInput = new CoreInputUdp([3333], logger, {
   // to the context for some reason. If using a custom logger, it may be beneficial to add a unique logger to the context for tracing purposes.
   inputContextCallback: (msg) => {
     // In this example, this callback receives the full UDP message object.
-    // * body: string - The UDP packet body as a string
-    // * remoteInfo: object
-    //   - address: string - IP Address of the remote client
-    //   - family: 'IPv4' | 'IPv6' - IP Version 6 or 4
-    //   - port: number - sender number
-    //   - size: number - Size in bytes of the udp packet
+    // - udpRequest
+    //   - body: string - The UDP packet body as a string
+    //   - remoteInfo: object
+    //     - address: string - IP Address of the remote client
+    //     - family: 'IPv4' | 'IPv6' - IP Version 6 or 4
+    //     - port: number - sender number
+    //     - size: number - Size in bytes of the udp packet
     return {
       // We don't do anything with the udpRequest here, but we could if necessary.
 
