@@ -1,5 +1,4 @@
 // Bring in package dependencies
-import { Logger } from 'log4js';
 import _ from 'lodash';
 import dgram, { RemoteInfo, Socket } from 'node:dgram';
 
@@ -12,7 +11,7 @@ export interface ICoreInputUdpProviderOptions {
   inputContextCallback?: (req: ICoreUdpRequest) => void;
 }
 
-export default class CoreInputUdpProvider {
+export default class CoreInputUdpProvider implements IInputProvider {
   private alreadyRegistered: boolean;
   private logger?: ILogger;
   private udpPorts: Array<number>;
@@ -26,7 +25,7 @@ export default class CoreInputUdpProvider {
    * This function sets class level variables.
    *
    * @param udpPorts - an array of numbers, the ports to start HTTP servers on.
-   * @param logger - a log4js logger instance to use for logging.
+   * @param logger - a logger instance to use for logging.
    * @param options
    **/
   constructor(

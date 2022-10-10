@@ -15,15 +15,12 @@ module.exports = [
      **/
     name: 'reformat-udp-message',
     async handler(facts, context) {
-      // The UDP Input gives us a special object. Check to see if this facts object is an AMQP input.
-      // If the facts object is not an AMQP input, we don't need to do any work!
-      // Note, this is completely application specific. A rules corpus can easily just work with
-      // facts.udpRequest
+      // The UDP Input gives us a special object.
       if (facts.udpRequest) {
         try {
           // We have an udpRequest so let's do some work to reformat it to make it
           // easier to process with the rules that also process the Directory Watcher Input.
-          // First, we parse udpRequest.body, which we expect to be JSON, into an object.
+          // First, we parse udpRequest.body, which we expect to be JSON, into an object. (This is application specific, of course, and in another application this body may not be JSON
           const messageContent = JSON.parse(facts.udpRequest.body);
           // Next, we parse out the properties of the messageContent into the root of the facts to imitate the
           // same structure we receive from the Directory Watcher Input and so
@@ -37,7 +34,7 @@ module.exports = [
           throw messageValidationError;
         }
       }
-      // Return the changed object (or if it was not an AMQP input, we just return the same facts we received).
+      // Return the changed facts object ... or the unchanged facts object if this was not a udp request
       return facts;
     },
   },

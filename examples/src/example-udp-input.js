@@ -10,6 +10,7 @@
  */
 
 // Bring in Package Dependencies
+const { v4: uuidv4 } = require('uuid');
 const { default: RulesHarvester, CoreInputUdp } = require('rule-harvester');
 
 // Bring in other Application Specific dependencies
@@ -18,25 +19,32 @@ const ruleClosures = require('./providers/rule_closures');
 const ruleCorpus = require('./providers/rule_corpus_udp');
 const logger = require('./providers/custom_logger');
 
-let udpFileCounter = 0;
-
 const coreUdpInput = new CoreInputUdp([3333], logger, {
+  // When a new UDP request is seen, this callback allows you to control how the rules engine context is set for that
+  // request. This is not necessary in many cases. However, this can be used to calculate a custom value to add
+  // to the context for some reason. If using a custom logger, it may be beneficial to add a unique logger to the context for tracing purposes.
   inputContextCallback: (msg) => {
-    // In this example, this callback receives the full AMQP-Cacoon message object (of type ConsumeMessage).
-    // Our other application logic (the output provider in this case) is expecting
-    // the orderFile to be set with a "name" that will be used to output a processed order to the file system.
+    // In this example, this callback receives the full UDP message object.
+    // * body: string - The UDP packet body as a string
+    // * remoteInfo: object
+    //   - address: string - IP Address of the remote client
+    //   - family: 'IPv4' | 'IPv6' - IP Version 6 or 4
+    //   - port: number - sender number
+    //   - size: number - Size in bytes of the udp packet
     return {
-      // Construct orderFile from the incoming message fields! For this, we'll just use
-      // data coming from the AMQP Broker as an example, but it could be anything!
-      orderFile: `udp_order_file-${udpFileCounter++}`,
+      // We don't do anything with the udpRequest here, but we could if necessary.
+
+      // Construct orderFile from using a UUID
+      // Just a random UUID so we have a unique "order file".
+      orderFile: `udp-order-${uuidv4()}`,
     };
   },
 });
 /**
- * This is an example of how to initialize and start the Rule Harvester with an AMQP Input.
+ * This is an example of how to initialize and start the Rule Harvester with an UDP Input. (a UDP server listening on a specific port that passes the received UDP data into the Rules Engine).
  *
  * Required providers include:
- * - ruleInputs: Input providers - In this example, a single input provider that listens to an AMQP queue and consumes
+ * - ruleInputs: Input providers -  In this example, a single input provider that starts a UDP server on a specific port and passes the UDP data as
  *   messages as they are received.
  * - ruleOutputs: Output providers - In this example, a single output provider. This is called after rules have been
  *   processed for a given input and just writes out an order file per valid order.
