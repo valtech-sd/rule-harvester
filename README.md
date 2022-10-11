@@ -69,6 +69,8 @@ The following Core Inputs are available starting with version 2 of Rule Harveste
 - CoreInputHttp - Starts an HTTP server on one or more ports then passes any requests into the rules engine. Also, this
   input can respond to the incoming HTTP requests either by waiting for a result from the rules engine or using a static
   response, or even an empty response.
+- CoreInputUdp - (Available with version 2.4.0) Starts a UDP server on one or more ports then passes any requests into the rules engine. No response is
+  expected
 
 The Rule Harvester maintainers expect to continually be adding to Core Inputs. Because of that, rather than trying
 to explain each of the inputs here, you are invited to check out the ./examples/ directory of this repo. Each

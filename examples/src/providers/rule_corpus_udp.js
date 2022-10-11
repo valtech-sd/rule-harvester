@@ -8,7 +8,7 @@ module.exports = [
     name: 'Validate the incoming order',
     rules: [
       {
-        when: 'invalidOrderUdp',
+        when: 'invalidOrderFile',
         then: [
           {
             closure: 'throw-message-validation-error',
@@ -19,7 +19,7 @@ module.exports = [
       {
         when: 'always',
         then: [
-          { closure: 'reformat-amqp-message' },
+          { closure: 'reformat-udp-message' },
           { closure: 'validateOrder' },
         ],
       },
@@ -96,8 +96,6 @@ module.exports = [
               { closure: 'calculateTaxes' },
               { closure: 'calculateTotalPrice' },
               { closure: 'buildOrderDispatch' },
-              { closure: 'prepareAmqpPublishAction' },
-              { closure: 'prepareAmqpRpcPublishAction' },
             ],
           },
         ],
@@ -110,10 +108,7 @@ module.exports = [
     rules: [
       {
         when: 'orderIsNotValid',
-        then: [
-          { closure: 'buildOrderDispatch_InvalidOrder' },
-          { closure: 'prepareAmqpPublishAction' },
-        ],
+        then: [{ closure: 'buildOrderDispatch_InvalidOrder' }],
       },
     ],
   },
