@@ -69,6 +69,8 @@ The following Core Inputs are available starting with version 2 of Rule Harveste
 - CoreInputHttp - Starts an HTTP server on one or more ports then passes any requests into the rules engine. Also, this
   input can respond to the incoming HTTP requests either by waiting for a result from the rules engine or using a static
   response, or even an empty response.
+- CoreInputUdp - (Available with version 2.4.0) Starts a UDP server on one or more ports then passes any requests into the rules engine. No response is
+  expected
 
 The Rule Harvester maintainers expect to continually be adding to Core Inputs. Because of that, rather than trying
 to explain each of the inputs here, you are invited to check out the ./examples/ directory of this repo. Each
@@ -437,6 +439,32 @@ ruleHarvester.start()
 
 > **Note:** The above configuration does not include [Core Closures](#core-closures) provided by the rules engine. See the section
 > [Configuration example](#configuration-example) for how to include Core Closures.
+
+## Logger
+You can pass a logger (optional) as the examples above. For a logger to work, it should have at least the following methods:
+
+- debug
+- error
+- fatal
+- info
+- trace
+
+Some loggers you may use:
+- [log4js](https://www.npmjs.com/package/log4js)
+- [tslog](https://www.npmjs.com/package/tslog)
+- [bunyan](https://www.npmjs.com/package/bunyan)
+
+The examples in the directory **./examples/src** use **log4js**. 
+And for a typescript project, using **tslog** is quite straightforward:  
+
+```typescript
+const logger = new Logger({
+	displayLoggerName: true,
+	minLevel: 'silly',
+	name: 'amqp-cacoon logger',
+	type: 'pretty'
+});
+```
 
 ## Example - Directory Watcher
 

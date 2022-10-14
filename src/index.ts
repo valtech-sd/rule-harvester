@@ -52,6 +52,11 @@ export {
   CoreInputHttpResponseType,
 } from './core/inputs/http-input';
 
+export {
+  default as CoreInputUdp,
+  ICoreInputUdpProviderOptions,
+} from './core/inputs/udp-input';
+
 // Export Core Outputs, individually since these are pick-and-choose
 export { default as CoreOutputAmqp } from './core/outputs/amqp-output';
 export { default as CoreOutputAmqpRpc } from './core/outputs/amqp-rpc-output';
@@ -61,6 +66,8 @@ export { default as CoreOutputAmqpRpc } from './core/outputs/amqp-rpc-output';
 export * from './core/types/amqp-types';
 // HTTP
 export * from './core/types/http-types';
+// UDP
+export * from './core/types/udp-types';
 
 // Export RuleHarvester
 export default class RuleHarvester {
