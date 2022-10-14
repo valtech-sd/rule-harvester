@@ -260,7 +260,10 @@ class HttpHandler implements IOutboundProvider {
     req: ICoreHttpRequest,
     context: any
   ) {
-    // Yes, we are ignoring the promise!
-    this.applyInputCb({ httpRequest: req }, context);
+    // Since we're not "waiting" here for the Rules Engine pass, we catch any errors and log
+    // This solves an issue where a promise error would go unhandled.
+    this.applyInputCb({ httpRequest: req }, context).catch(err => this.logger?.trace(
+      `CoreInputHttp HttpHandler, callRulesWithoutWaitingForResponse - Received error from applyInputCb - ${err.message}`
+    ));
   }
 }
