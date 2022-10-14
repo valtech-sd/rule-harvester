@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "amqp-cacoon": "^3.0.3",
-    "coronado-bridge": "^2.0.0",
+    "coronado-bridge": "^2.1.0",
     "lodash": "^4.17.21",
     "log4js": "^6.3.0",
     "rules-js": "^1.0.0"
