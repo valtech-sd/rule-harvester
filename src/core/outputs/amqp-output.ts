@@ -29,7 +29,7 @@ export default class CoreOutputAmqp implements IOutputProvider {
    * This function sets class level variables.
    *
    * @param amqpCacoon - an instance of AMQP Cacoon which will manage all AMQP communications.
-   * @param logger - a log4js logger instance to use for logging.
+   * @param logger - a logger instance to use for logging.
    **/
   constructor(amqpCacoon: AmqpCacoon, logger: ILogger) {
     this.alreadyRegistered = false;

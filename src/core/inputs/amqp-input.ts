@@ -39,7 +39,7 @@ export default class CoreInputAmqp implements IInputProvider {
    *
    * @param amqpCacoon - an instance of AMQP Cacoon which will manage all AMQP communications.
    * @param amqpQueue - a string with the name of the queue to consume from.
-   * @param logger - a log4js logger instance to use for logging.
+   * @param logger - a logger instance to use for logging.
    * @param options - options for the behavior of the provider.
    **/
   constructor(
