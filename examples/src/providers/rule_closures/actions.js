@@ -1,6 +1,12 @@
 // Package Dependencies
 const _ = require('lodash');
 const { ICoreHttpResponseAction } = require('rule-harvester');
+const fs = require('fs');
+const { promisify } = require('util');
+const readDir = promisify(fs.readdir);
+const readFile = promisify(fs.readFile);
+const unlink = promisify(fs.unlink);
+const path = require('path');
 
 // These are just example closures to transform the data
 module.exports = [
@@ -106,6 +112,44 @@ ${JSON.stringify(facts, null, 2)}
         202
       );
       // Return the modified facts.
+      return facts;
+    },
+  },
+
+  {
+    /**
+     * readAScheduledFile
+     * Read a single file from the path provided as part of the schedule task input
+     *
+     * @param - facts
+     * @param - context
+     * @return - Build the dispatch
+     **/
+    name: 'readAScheduledFile',
+    async handler(facts, context) {
+      try {
+        let pathStr =
+          path.resolve(__dirname) +
+          `/../../../${facts.scheduledTask.input.directory}`;
+        const files = await readDir(pathStr);
+
+        let fileFound = false;
+        for (let file of files) {
+          if (file !== '.gitignore') {
+            fileFound = true;
+            let filePath = `${pathStr}/${file}`;
+            let content = await readFile(filePath);
+            await unlink(filePath);
+            _.merge(facts, JSON.parse(content.toString()));
+            break;
+          }
+        }
+        if (!fileFound) {
+          facts.skipOrder = true;
+        }
+      } catch (e) {
+        throw e;
+      }
       return facts;
     },
   },

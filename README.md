@@ -71,6 +71,7 @@ The following Core Inputs are available starting with version 2 of Rule Harveste
   response, or even an empty response.
 - CoreInputUdp - (Available with version 2.4.0) Starts a UDP server on one or more ports then passes any requests into the rules engine. No response is
   expected
+- CoreInputScheduler - (Available with version 2.5.0) Starts a task scheduler that periodically runs the rules engine. 
 
 The Rule Harvester maintainers expect to continually be adding to Core Inputs. Because of that, rather than trying
 to explain each of the inputs here, you are invited to check out the ./examples/ directory of this repo. Each
