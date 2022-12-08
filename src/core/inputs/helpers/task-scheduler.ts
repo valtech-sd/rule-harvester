@@ -1,6 +1,8 @@
 /**
  * Load dependencies
  */
+// Using ts-ignore becaue mocha doesn't seem to like that we defined types separately
+// @ts-ignore 
 import later, { ScheduleData, Timer } from '@breejs/later';
 // import PQueue from 'p-queue';
 import { ILogger } from '../../../types';
