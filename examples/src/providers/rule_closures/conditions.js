@@ -80,6 +80,37 @@ module.exports = [
   },
   {
     /**
+     * invalidSchedulerInput
+     * example {closure: "invalidSchedulerInput"} - If the input is valid
+     * @param type
+     * @return boolean - true if the order data is not valid JSON
+     **/
+    name: 'invalidSchedulerInput',
+    handler(facts, context) {
+      try {
+        // The scheduler Input gives us a special object and the property that
+        // - scheduledTask
+        //      name: string;
+        //      intervalText?: string;
+        //      intervalCron?: string;
+        //      input?: any;
+        //      queue: {
+        //        waiting: number;
+        //        pending: number;
+        //      };
+        // Ensure the request: is a POST + has a BODY
+        return !(
+          facts?.scheduledTask?.name &&
+          facts?.scheduledTask?.queue &&
+          (facts?.scheduledTask?.intervalText || facts?.scheduler?.intervalCron)
+        );
+      } catch (ex) {
+        return true;
+      }
+    },
+  },
+  {
+    /**
      * orderIsValid
      * example {closure: "orderIsValid"} - If the order is Valid
      * @param type
@@ -111,6 +142,18 @@ module.exports = [
     name: 'checkShippingState',
     handler(facts, context) {
       return context.parameters.orderShippingState === context.parameters.state;
+    },
+    options: { required: ['orderShippingState', 'state'] },
+  },
+  {
+    /**
+     * shouldNotSkipOrder
+     * @param type
+     * @return boolean - true/false
+     **/
+    name: 'shouldNotSkipOrder',
+    handler(facts, _context) {
+      return !facts.skipOrder;
     },
     options: { required: ['orderShippingState', 'state'] },
   },

@@ -8,6 +8,10 @@ module.exports = class RuleOutputProviderFile {
   // The rules Harvester will call the outputResult function after it is done processing input
   async outputResult({ facts, error, errorGroup, context }) {
     if (!error) {
+      if (facts.skipOrder) {
+        logger.debug('Order Skipped: Facts At Completion', facts);
+        return;
+      }
       // This writes a file to the ./output_order_dispatch directory
       // It writes an output string that was built during the rule evaluation.
       // Note here we get the file name from the context which was added to the
