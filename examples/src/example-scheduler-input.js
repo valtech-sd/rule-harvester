@@ -26,7 +26,12 @@ const logger = require('./providers/custom_logger');
 
 const coreScheduledInput = new CoreInputScheduler(
   {
+    // Limit the concurrency of all tasks to 1. This means, if "Fast Orders" task is triggered while a previous "Fast Orders" task is
+    // already running that this task will put put on the queue and not run until the prior task is complete.
+    // For the example service, this should not come into play at all.
     defaultPerTaskConcurrency: 1,
+    // This limits the queue size. The queue used for tasks will not grow beyond 100. 
+    // For the example service, this should not come into play at all.
     defaultMaxPerTaskQueueLength: 100,
     tasks: [
       {

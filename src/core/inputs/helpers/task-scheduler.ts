@@ -2,20 +2,50 @@
  * Load dependencies
  */
 // Using ts-ignore becaue mocha doesn't seem to like that we defined types separately
-// @ts-ignore 
+// @ts-ignore
 import later, { ScheduleData, Timer } from '@breejs/later';
 // import PQueue from 'p-queue';
 import { ILogger } from '../../../types';
 
 export interface ScheduleConfig {
+  /**
+   * defaultPerTaskConcurrency
+   * The idea behind this property is to control how many of the same task can run at the same time.
+   * For example,
+   * If you have a task that is scheduled every second but it takes 10 seconds to complete
+   *  then you might have 10 of the same task running at the same time
+   * This may be ok or you may only want 1 single instance of any task to run at the same time.
+   **/
   defaultPerTaskConcurrency?: number; // Default per task concurrency. (Default to Infinity)
+  /**
+   * defaultMaxPerTaskQueueLength
+   * The way task managment works is by using a queue. This controls how large the task queue can be.
+   * If a task interval goes off while an existing task is running and concurrency is already limited
+   *  then your task queue may grow.
+   * This variable controls the max length of that queue
+   **/
   defaultMaxPerTaskQueueLength?: number; // Default to Infinity
   timezoneConfig?: 'local' | 'utc'; // Local or utc time (Defaults to utc)
   tasks: TaskConfig[]; // List of tasks
 }
 export interface TaskConfig {
   name: string;
+  /**
+   * The way task managment works is by using a queue. This controls how large the task queue can be.
+   * If a task interval goes off while an existing task is running and concurrency is already limited
+   *  then your task queue may grow.
+   * This variable controls the max length of that queue
+   * This controls the max queue length for the current task whereas the top level defaultMaxPerTaskQueueLength controls the default value
+   **/
   maxTaskQueueLength?: number | null; // Queue length for task queue
+  /**
+   * The idea behind this property is to control how many of the same task can run at the same time.
+   * For example,
+   * If you have a task that is scheduled every second but it takes 10 seconds to complete
+   *  then you might have 10 of the same task running at the same time
+   * This may be ok or you may only want 1 single instance of any task to run at the same time.
+   * This controls the concurrency limit for this task whereas the top level defaultPerTaskConcurrency controls the default value
+   **/
   concurrency?: number | null; // Allowed, concurrency for this task
   intervalText?: string | null;
   intervalCron?: string | null;
