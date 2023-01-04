@@ -1,9 +1,8 @@
 /**
  * Load dependencies
  */
-// Using ts-ignore becaue mocha doesn't seem to like that we defined types separately
-// @ts-ignore
-import later, { ScheduleData, Timer } from '@breejs/later';
+import later from '@breejs/later';
+import { ScheduleData, Timer } from '../../types/helpers/later-overrides';
 import { ILogger } from '../../../types';
 
 export interface ScheduleConfig {
