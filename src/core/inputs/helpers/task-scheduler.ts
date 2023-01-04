@@ -1,6 +1,7 @@
 /**
  * Load dependencies
  */
+// @ts-ignore
 import later from '@breejs/later';
 import { ScheduleData, Timer } from '../../types/helpers/later-overrides';
 import { ILogger } from '../../../types';
