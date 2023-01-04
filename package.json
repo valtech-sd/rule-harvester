@@ -6,7 +6,8 @@
   "types": "build/index.d.ts",
   "type": "commonjs",
   "files": [
-    "build/**/*"
+    "build/**/*",
+    "@types/**/*"
   ],
   "repository": {
     "type": "git",
