@@ -243,8 +243,9 @@ class HttpHandler implements IOutboundProvider {
     // Result (which is the entire altered facts object after a rules pass) can also contain
     // a property httpResponseAction in order to respond with something custom. If we find it
     // we respond wih that! If it's empty or just undefined, the http bridge will just respond
-    // with http 200 and an empty body!
-    return result.httpResponseAction;
+    // with http 200 and an empty body!  The http bridge will also always respond with 200 if
+    // this is not an instanceof OutboundResponse.
+    return new OutboundResponse(result.httpResponseAction.body, result.httpResponseAction.status, result.httpResponseAction.headers);
   }
 
   /**
