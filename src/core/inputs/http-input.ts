@@ -33,6 +33,7 @@ export enum CoreInputHttpResponseType {
 // Export an interface to hold our provider options
 export interface ICoreInputHttpProviderOptions {
   responseMode: CoreInputHttpResponseType;
+  responseTimeoutMs?:number;
   staticHttpResponse?: OutboundResponse;
   inputContextCallback?: (req: ICoreHttpRequest) => void;
 }
@@ -95,8 +96,10 @@ export default class CoreInputHttp implements IInputProvider {
       const bridgeConfig: IBridgeConfig = {
         ports: this.httpPorts,
         logger: this.logger,
-        outboundProvider: this.httpHandler,
+        outboundProvider: this.httpHandler
       };
+      if (this.options.responseTimeoutMs) bridgeConfig.requestTimeoutMs = this.options.responseTimeoutMs;
+
       this.httpBridge = new CoronadoBridge(bridgeConfig);
       // Keep track so that we only register one http bridge
       this.alreadyRegistered = true;
