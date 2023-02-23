@@ -9,7 +9,24 @@ import _ from 'lodash';
 import { default as util } from 'util';
 
 export interface ICoreInputAmqpProviderOptions {
-  requeueOnNack?: boolean;
+	// ackMod - Default = auto
+	// auto
+	//   acks on rules engine success
+	//   ack on error with name=MessageValidationError 
+	// callback
+	//   Calls ackCallback to handle success and and error nack/acks
+	//   The callback is responsible for acking or nacking all calls
+	//   NOTE: The facts in the callback will return null if an error occured
+	ackMode?: 'auto' | 'callback';
+  requeueOnNack?: boolean; // Only used for ackMode = 'auto'
+	ackCallback?: (
+		rulesEngineOutput: {facts: any, error: unknown},
+		msg: ICoreAmqpMessage | undefined,
+		channel: {
+			ack: (options: {requeue: boolean, allUpTo: boolean}) => void, 
+			nack: (options: {requeue: boolean, allUpTo: boolean}) => void
+		}
+	) => Promise<void>;
   inputContextCallback?: (msg: ConsumeMessage) => void;
 }
 
@@ -53,7 +70,10 @@ export default class CoreInputAmqp implements IInputProvider {
     this.logger = logger;
     this.amqpCacoon = amqpCacoon;
     this.amqpQueue = amqpQueue;
-    this.options = options;
+    this.options = options || {};
+		if (!this.options.ackCallback) {
+			this.options.ackMode = 'auto'
+		}
   }
 
   /**
@@ -106,12 +126,14 @@ export default class CoreInputAmqp implements IInputProvider {
    **/
   async amqpHandler(channel: ChannelWrapper, msg: ConsumeMessage) {
     this.logger?.trace(`CoreInputAmqp.amqpHandler: Start`);
+		let output = {facts: undefined, error: undefined}
+    let amqpMessage: ICoreAmqpMessage | undefined= undefined;
     try {
       // Create an object for our message - note we DO NOT validate the message here at all!
       // It will be set to a string with whatever. it's the responsibility of the application
       // using this Input to validate and THROW an error with the name 'MessageValidationError'
       // which this method will catch and treat differently!
-      let amqpMessage: ICoreAmqpMessage = {
+      amqpMessage = {
         amqpMessageContent: msg.content.toString(),
         amqpMessageFields: msg.fields,
         amqpMessageProperties: msg.properties,
@@ -134,14 +156,17 @@ export default class CoreInputAmqp implements IInputProvider {
       // since that should be driven by an application. Therefore, we just put in 1 item into
       // facts, an amqpMessage and then let the application do whatever it wants/needs.
       // Note, the handler WILL return updated facts, but we're not using them in this input!
-      const resultFacts = await this.handler(
+      output.facts = await this.handler(
         { amqpMessage: amqpMessage },
         context
       );
 
       // Ack the message
-      channel.ack(msg);
+			if (this.options.ackMode === 'auto') {
+				channel.ack(msg);
+			}
     } catch (e) {
+			output.error = e;
       // Handle errors!
 
       // If this is a message validation error then we do not need to retry because this is not going to magically be fixed.
@@ -161,19 +186,30 @@ export default class CoreInputAmqp implements IInputProvider {
         );
         // Since we're dealing with INVALID messages (as defined by the application using this Input) we
         // ACK so we don't requeue the messages forever!
-        channel.ack(msg);
+				if (this.options.ackMode === 'auto') {
+					channel.ack(msg);
+				}
       } else {
         // Otherwise, the error is something other than INVALID MESSAGE, so we deal with it.
         this.logger?.error(
           `CoreInputAmqp.amqpHandler - Will Nack Message - INNER ERROR: ${e.message}`
         );
-        // TODO: Implement a requeueHandler callback - it will get the ORIGINAL message and context since
-        //  we don't have access to the changed facts, and will control requeue more than just "same queue". It
-        //  should work in concert with requeueOnNack.
         // Nack the message and requeue only based on the options passed to this input
-        channel.nack(msg, false, this.options.requeueOnNack || false);
+				if (this.options.ackMode === 'auto') {
+					channel.nack(msg, false, this.options.requeueOnNack || false);
+				}
       }
     }
+		if (this.options.ackMode === 'callback') {
+			if (this.options.ackCallback) {
+				await this.options.ackCallback(output, amqpMessage, {
+					ack: ({allUpTo}) => channel.ack(msg, allUpTo),
+					nack: ({requeue, allUpTo}) => channel.nack(msg, allUpTo, requeue)
+				});
+			} else {
+				this.logger?.error('CoreInputAmqp.amqpHandler - Error: options.ackCallback is not defined but we are in callback mode and this needs to be defined');
+			}
+		}
     this.logger?.trace(`CoreInputAmqp.amqpHandler: End`);
   }
 }
