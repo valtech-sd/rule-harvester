@@ -20,12 +20,12 @@
   },
   "dependencies": {
     "@breejs/later": "^4.1.0",
+    "@valtech-sd/rules-js": "^1.0.0",
     "amqp-cacoon": "^3.2.0",
     "coronado-bridge": "^2.1.0",
     "lodash": "^4.17.21",
     "log4js": "^6.3.0",
-    "p-queue": "^7.3.0",
-    "rules-js": "^1.0.0"
+    "p-queue": "^7.3.0"
   },
   "author": "Valtech: Daniel Morris",
   "license": "MIT",

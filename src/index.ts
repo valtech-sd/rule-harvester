@@ -7,7 +7,7 @@ import {
   ILogger,
 } from './types';
 //@ts-ignore
-import Engine from 'rules-js';
+import Engine from '@valtech-sd/rules-js';
 import _ from 'lodash';
 
 export interface IRuleHarvesterProviders {
