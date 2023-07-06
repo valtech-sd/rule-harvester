@@ -96,7 +96,10 @@ export default class CoreInputHttp implements IInputProvider {
       const bridgeConfig: IBridgeConfig = {
         ports: this.httpPorts,
         logger: this.logger,
-        outboundProvider: this.httpHandler
+        outboundProvider: this.httpHandler,
+        corsOptions: {
+          origin: '*'
+        }
       };
       if (this.options.responseTimeoutMs) bridgeConfig.requestTimeoutMs = this.options.responseTimeoutMs;
 
