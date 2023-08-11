@@ -52,6 +52,14 @@ export interface ICoreInputHttpProviderOptions {
      */
     type?: string | string[] | ((req: http.IncomingMessage) => any);
   };
+  corsOptions?: {
+    /**
+     * @default '*''
+     */
+    origin?: any;
+    // Other keys we are alowing but not defining here
+    [key:string]: any
+  };
 }
 
 export default class CoreInputHttp implements IInputProvider {
@@ -113,7 +121,8 @@ export default class CoreInputHttp implements IInputProvider {
         ports: this.httpPorts,
         logger: this.logger,
         outboundProvider: this.httpHandler,
-        jsonParsingOptions: this.options.jsonParsingOptions
+        jsonParsingOptions: this.options.jsonParsingOptions,
+        corsOptions: this.options.corsOptions,
       };
       if (this.options.responseTimeoutMs) bridgeConfig.requestTimeoutMs = this.options.responseTimeoutMs;
 
