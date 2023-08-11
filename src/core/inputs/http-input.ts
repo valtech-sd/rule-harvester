@@ -9,6 +9,7 @@ import CoronadoBridge, {
 // Bring in rule-harvester dependencies
 import { IInputProvider, ILogger } from '../../types';
 import { ICoreHttpRequest } from '../types/http-types';
+import * as http from 'http';
 
 /**
  * CoreInputHttpResponseType os an enum for use in the responseMode property of
@@ -36,6 +37,29 @@ export interface ICoreInputHttpProviderOptions {
   responseTimeoutMs?:number;
   staticHttpResponse?: OutboundResponse;
   inputContextCallback?: (req: ICoreHttpRequest) => void;
+  jsonParsingOptions?: {
+    /** When set to true, then deflated (compressed) bodies will be inflated; when false, deflated bodies are rejected. Defaults to true. */
+    inflate?: boolean;
+    /**
+     * Controls the maximum request body size. If this is a number,
+     * then the value specifies the number of bytes; if it is a string,
+     * the value is passed to the bytes library for parsing. Defaults to '100kb'.
+     */
+    limit?: number | string;
+    /**
+     * The type option is used to determine what media type the middleware will parse
+     * Default: application/json
+     */
+    type?: string | string[] | ((req: http.IncomingMessage) => any);
+  };
+  corsOptions?: {
+    /**
+     * @default '*''
+     */
+    origin?: any;
+    // Other keys we are alowing but not defining here
+    [key:string]: any
+  };
 }
 
 export default class CoreInputHttp implements IInputProvider {
@@ -96,7 +120,9 @@ export default class CoreInputHttp implements IInputProvider {
       const bridgeConfig: IBridgeConfig = {
         ports: this.httpPorts,
         logger: this.logger,
-        outboundProvider: this.httpHandler
+        outboundProvider: this.httpHandler,
+        jsonParsingOptions: this.options.jsonParsingOptions,
+        corsOptions: this.options.corsOptions,
       };
       if (this.options.responseTimeoutMs) bridgeConfig.requestTimeoutMs = this.options.responseTimeoutMs;
 
